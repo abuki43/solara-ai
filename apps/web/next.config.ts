@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         destination: `${serverUrl}/api/auth/:path*`,
       },
       {
+        source: "/api/livekit/:path*",
+        destination: `${serverUrl}/api/livekit/:path*`,
+      },
+      {
         source: "/trpc/:path*",
         destination: `${serverUrl}/trpc/:path*`,
       },

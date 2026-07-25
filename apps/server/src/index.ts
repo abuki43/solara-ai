@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express from "express";
+import { internalAgentRouter } from "./routes/internal-agent.js";
 import { livekitRouter } from "./routes/livekit.js";
 
 const app = express();
@@ -31,7 +32,7 @@ app.use(
       callback(new Error(`Origin ${origin ?? "unknown"} not allowed by CORS`));
     },
     methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Internal-Key"],
     credentials: true,
   }),
 );
@@ -40,6 +41,7 @@ app.use(express.json());
 
 app.all("/api/auth{/*path}", toNodeHandler(auth));
 app.use("/api/livekit", livekitRouter);
+app.use("/api/internal", internalAgentRouter);
 
 app.use(
   "/trpc",
