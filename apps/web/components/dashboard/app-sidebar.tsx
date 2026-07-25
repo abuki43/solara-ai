@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   IconBook,
+  IconCalendarCheck,
   IconFile,
   IconMicrophone,
   IconPhone,
@@ -31,6 +32,7 @@ const navItems = [
   { href: "/knowledge", label: "Knowledge", icon: IconBook },
   { href: "/files", label: "Files", icon: IconFile },
   { href: "/tools", label: "Tools", icon: IconTool },
+  { href: "/bookings", label: "Bookings", icon: IconCalendarCheck },
   { href: "/calls", label: "Calls", icon: IconPhone },
   { href: "/settings", label: "Settings", icon: IconSettings },
 ];

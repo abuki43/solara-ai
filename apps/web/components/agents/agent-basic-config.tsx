@@ -77,6 +77,18 @@ export function AgentBasicConfig({ agentId }: { agentId: string }) {
   async function save() {
     setSaved(false);
     setError(null);
+    if (
+      services.some(
+        (service) =>
+          !service.name.trim() ||
+          service.durationMinutes < 15 ||
+          service.durationMinutes > 480 ||
+          service.durationMinutes % 15 !== 0,
+      )
+    ) {
+      setError("Every service needs a name and a duration from 15–480 minutes in 15-minute steps.");
+      return;
+    }
     try {
       await updateMutation.mutateAsync({ id: agentId, greeting, hours, services });
     } catch (saveError) {
@@ -151,6 +163,7 @@ export function AgentBasicConfig({ agentId }: { agentId: string }) {
               type="button"
               variant="outline"
               size="sm"
+              disabled={services.length >= 20}
               onClick={() =>
                 setServices((current) => [
                   ...current,
@@ -171,7 +184,7 @@ export function AgentBasicConfig({ agentId }: { agentId: string }) {
           </div>
           <div className="space-y-3">
             {services.map((service, index) => (
-              <div key={service.id} className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_110px_90px_44px]">
+              <div key={service.id} className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_100px_85px_110px_90px_44px]">
                 <Input
                   value={service.name}
                   onChange={(event) => updateService(index, { name: event.target.value })}
@@ -189,6 +202,25 @@ export function AgentBasicConfig({ agentId }: { agentId: string }) {
                   onChange={(event) => updateService(index, { currency: event.target.value })}
                   aria-label="Currency"
                 />
+                <Input
+                  type="number"
+                  min={15}
+                  max={480}
+                  step={15}
+                  value={service.durationMinutes}
+                  onChange={(event) =>
+                    updateService(index, { durationMinutes: Number(event.target.value) })
+                  }
+                  aria-label="Duration in minutes"
+                />
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={service.bookable}
+                    onChange={(event) => updateService(index, { bookable: event.target.checked })}
+                  />
+                  Bookable
+                </label>
                 <Button
                   type="button"
                   variant="ghost"

@@ -25,7 +25,7 @@ const serviceSchema = z.object({
   name: z.string().min(1).max(100),
   price: z.number().nonnegative(),
   currency: z.string().min(1).max(10),
-  durationMinutes: z.number().int().positive().max(1440),
+  durationMinutes: z.number().int().min(15).max(480).multipleOf(15),
   bookable: z.boolean(),
 });
 
@@ -43,7 +43,7 @@ const updateAgentSchema = createAgentSchema
     additionalLanguages: z.array(languageSchema).optional(),
     greeting: z.string().min(1).max(500).optional(),
     hours: businessHoursSchema.optional(),
-    services: z.array(serviceSchema).max(50).optional(),
+    services: z.array(serviceSchema).max(20).optional(),
     tone: toneSchema.optional(),
     aboutText: z.string().max(2000).nullable().optional(),
     customInstructions: z.string().max(3000).nullable().optional(),
