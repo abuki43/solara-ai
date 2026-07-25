@@ -1,0 +1,34 @@
+{
+  "name": "server",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsdown",
+    "check-types": "tsc -b",
+    "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.mjs"
+  },
+  "dependencies": {
+    "@hono/trpc-server": "^0.4.2",
+    "@solar-ai/api": "workspace:*",
+    "@solar-ai/auth": "workspace:*",
+    "@solar-ai/db": "workspace:*",
+    "@solar-ai/env": "workspace:*",
+    "@trpc/server": "catalog:",
+    "better-auth": "catalog:",
+    "cors": "^2.8.6",
+    "dotenv": "catalog:",
+    "express": "^5.2.1",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@solar-ai/config": "workspace:*",
+    "@types/cors": "^2.8.19",
+    "@types/express": "catalog:",
+    "@types/node": "catalog:",
+    "tsdown": "^0.22.3",
+    "tsx": "^4.22.5",
+    "typescript": "catalog:"
+  }
+}

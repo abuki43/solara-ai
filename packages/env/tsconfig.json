@@ -1,0 +1,3 @@
+{
+  "extends": "@solar-ai/config/tsconfig.base.json"
+}

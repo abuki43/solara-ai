@@ -1,0 +1,28 @@
+{
+  "name": "@solar-ai/api",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@solar-ai/auth": "workspace:*",
+    "@solar-ai/db": "workspace:*",
+    "@solar-ai/env": "workspace:*",
+    "@trpc/client": "^11.18.0",
+    "@trpc/server": "catalog:",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@solar-ai/config": "workspace:*",
+    "@types/express": "catalog:",
+    "typescript": "catalog:"
+  }
+}
