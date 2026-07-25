@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AgentLanguagesCard } from "@/components/agents/agent-languages-card";
 import { AgentWizard } from "@/components/agents/agent-wizard";
 import { WidgetSettingsCard } from "@/components/agents/widget-settings-card";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
@@ -17,6 +18,7 @@ export default async function EditAgentPage({
     <DashboardShell title="Edit agent" description="Update agent setup">
       <div className="space-y-6">
         <AgentWizard mode="edit" agentId={id} />
+        <AgentLanguagesCard agentId={id} />
         <WidgetSettingsCard agentId={id} />
         <Card className="max-w-3xl">
           <CardHeader>

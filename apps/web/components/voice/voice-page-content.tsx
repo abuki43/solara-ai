@@ -26,6 +26,7 @@ export function VoicePageContent() {
   const [greeting, setGreeting] = useState("");
   const [tone, setTone] = useState<"friendly" | "professional" | "casual">("friendly");
   const [voiceId, setVoiceId] = useState("");
+  const [amharicVoiceId, setAmharicVoiceId] = useState("");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -43,6 +44,7 @@ export function VoicePageContent() {
     setGreeting(voiceQuery.data.greeting ?? "");
     setTone(voiceQuery.data.tone);
     setVoiceId(voiceQuery.data.selectedVoiceId);
+    setAmharicVoiceId(voiceQuery.data.selectedAmharicVoiceId);
   }, [voiceQuery.data]);
 
   const dirty = useMemo(() => {
@@ -50,9 +52,10 @@ export function VoicePageContent() {
     return (
       greeting !== (voiceQuery.data.greeting ?? "") ||
       tone !== voiceQuery.data.tone ||
-      voiceId !== voiceQuery.data.selectedVoiceId
+      voiceId !== voiceQuery.data.selectedVoiceId ||
+      amharicVoiceId !== voiceQuery.data.selectedAmharicVoiceId
     );
-  }, [greeting, tone, voiceId, voiceQuery.data]);
+  }, [greeting, tone, voiceId, amharicVoiceId, voiceQuery.data]);
 
   useEffect(() => {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -89,13 +92,16 @@ export function VoicePageContent() {
         greeting,
         tone,
         englishVoiceId: voiceId,
+        ...(voiceQuery.data?.amharicEnabled && amharicVoiceId
+          ? { amharicVoiceId }
+          : {}),
       });
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Could not save voice settings");
     }
   }
 
-  async function previewVoice(selectedVoiceId: string) {
+  async function previewVoice(selectedVoiceId: string, language: "en" | "am" = "en") {
     if (!agentId) return;
     setPreviewError(null);
     setPreviewing(true);
@@ -107,6 +113,7 @@ export function VoicePageContent() {
         body: JSON.stringify({
           agentId,
           voiceId: selectedVoiceId,
+          language,
           text: greeting.slice(0, 200) || undefined,
         }),
       });
@@ -132,7 +139,7 @@ export function VoicePageContent() {
         <CardHeader>
           <CardTitle>Languages</CardTitle>
           <CardDescription>
-            English is available now. Change language intent in agent setup.
+            English is live. Amharic appears when Addis is enabled on the server.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-2">
@@ -142,6 +149,11 @@ export function VoicePageContent() {
               {language.toUpperCase()}
             </Badge>
           ))}
+          {voiceQuery.data.amharicEnabled ? (
+            <Badge variant="outline">Addis ready</Badge>
+          ) : (
+            <Badge variant="outline">Amharic gated</Badge>
+          )}
           <Button asChild variant="link" className="px-0">
             <Link href={`/agents/${agentId}/edit`}>Change languages in Agents → Edit setup</Link>
           </Button>
@@ -151,7 +163,7 @@ export function VoicePageContent() {
       <Card>
         <CardHeader>
           <CardTitle>English voice</CardTitle>
-          <CardDescription>Choose the Cartesia voice used for browser calls.</CardDescription>
+          <CardDescription>Choose the Cartesia voice used for English browser calls.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {voiceQuery.data.voices.map((voice) => (
@@ -190,6 +202,50 @@ export function VoicePageContent() {
           {previewError ? <p className="text-sm text-destructive">{previewError}</p> : null}
         </CardContent>
       </Card>
+
+      {voiceQuery.data.amharicEnabled && voiceQuery.data.amharicVoices.length ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Amharic voice</CardTitle>
+            <CardDescription>Addis Voices 2 used only when the call language is Amharic.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {voiceQuery.data.amharicVoices.map((voice) => (
+              <div
+                key={voice.id}
+                className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 ${
+                  amharicVoiceId === voice.id ? "border-primary bg-primary/5" : ""
+                }`}
+              >
+                <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+                  <input
+                    type="radio"
+                    name="amharic-voice"
+                    checked={amharicVoiceId === voice.id}
+                    onChange={() => {
+                      setSaved(false);
+                      setAmharicVoiceId(voice.id);
+                    }}
+                  />
+                  <div>
+                    <p className="font-medium">{voice.name}</p>
+                    <p className="text-xs text-muted-foreground">{voice.description}</p>
+                  </div>
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={previewing}
+                  onClick={() => previewVoice(voice.id, "am")}
+                >
+                  Preview
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader>

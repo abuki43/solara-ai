@@ -2,6 +2,7 @@
 
 import { Bot, Clock3, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +14,21 @@ export function PublicCallPage({ slug }: { slug: string }) {
     { slug },
     { retry: false },
   );
+
+  const languageOptions = useMemo(() => {
+    if (!agent) return ["en"] as Array<"en" | "am">;
+    const options = new Set<"en" | "am">();
+    if (agent.primaryLanguage === "en" || agent.primaryLanguage === "am") {
+      options.add(agent.primaryLanguage);
+    }
+    for (const language of agent.additionalLanguages ?? []) {
+      if (language === "en" || language === "am") options.add(language);
+    }
+    if (!options.size) options.add("en");
+    return [...options];
+  }, [agent]);
+
+  const [language, setLanguage] = useState<"en" | "am">("en");
 
   if (isLoading) {
     return (
@@ -52,6 +68,7 @@ export function PublicCallPage({ slug }: { slug: string }) {
   }
 
   const businessName = agent.businessName || agent.organizationName;
+  const selectedLanguage = languageOptions.includes(language) ? language : languageOptions[0]!;
 
   return (
     <div className="mx-auto w-full max-w-lg">
@@ -63,15 +80,35 @@ export function PublicCallPage({ slug }: { slug: string }) {
         <p className="mt-2 text-sm text-black/45">{agent.description || "How can we help today?"}</p>
       </div>
 
+      {languageOptions.length > 1 ? (
+        <div className="mb-4 flex items-center justify-center gap-2">
+          {languageOptions.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setLanguage(option)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium tracking-wide transition ${
+                selectedLanguage === option
+                  ? "bg-[#111] text-white"
+                  : "bg-white/70 text-black/50 hover:text-black/80"
+              }`}
+            >
+              {option === "am" ? "Amharic" : "English"}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <VoiceDemo
         agentSlug={slug}
         receptionistName={`${businessName} AI Receptionist`}
+        language={selectedLanguage}
       />
 
       <Card className="mt-4 border-white/60 bg-white/45 backdrop-blur">
         <CardContent className="flex items-start gap-3 p-4 text-xs leading-relaxed text-black/45">
           <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-          You are speaking with an AI assistant. Do not share passwords, payment credentials, or
+          You are connected to customer support. Do not share passwords, payment credentials, or
           sensitive medical information.
         </CardContent>
       </Card>

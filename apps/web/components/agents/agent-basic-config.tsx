@@ -106,16 +106,16 @@ export function AgentBasicConfig({ agentId }: { agentId: string }) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="greeting">AI disclosure and greeting</Label>
+          <Label htmlFor="greeting">Greeting</Label>
           <Textarea
             id="greeting"
             value={greeting}
             onChange={(event) => setGreeting(event.target.value)}
             rows={3}
-            placeholder="Hello, I am the AI assistant for your business. How can I help?"
+            placeholder="Thank you for calling our salon. You've reached customer support. How can I help you today?"
           />
           <p className="text-xs text-muted-foreground">
-            Tell callers they are speaking with an AI assistant.
+            Spoken at the start of every call. Keep it short and natural.
           </p>
         </div>
 

@@ -18,7 +18,25 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-const SHORT_CODE = "7856";
+const SHORT_CODES = {
+  "7856": "en",
+  "7855": "am",
+} as const;
+
+type ShortCode = keyof typeof SHORT_CODES;
+type CallLanguage = (typeof SHORT_CODES)[ShortCode];
+
+function languageFromDigits(digits: string): CallLanguage | null {
+  if (digits in SHORT_CODES) {
+    return SHORT_CODES[digits as ShortCode];
+  }
+  return null;
+}
+
+function labelForLanguage(language: CallLanguage) {
+  return language === "am" ? "Amharic" : "English";
+}
+
 const SERVER_URL = "";
 
 type TokenResponse = {
@@ -139,6 +157,7 @@ function AgentReadyBridge({ onReady }: { onReady: () => void }) {
 
 function InCallScreen({
   contactName,
+  dialedCode,
   phase,
   elapsedSec,
   onHangUp,
@@ -146,6 +165,7 @@ function InCallScreen({
   session,
 }: {
   contactName: string;
+  dialedCode: string;
   phase: "ringing" | "active";
   elapsedSec: number;
   onHangUp: () => void;
@@ -178,7 +198,7 @@ function InCallScreen({
           <h2 className="mt-6 text-3xl font-light tracking-tight" style={{ fontFamily: "var(--font-ibm-plex)" }}>
             {contactName}
           </h2>
-          <p className="mt-2 font-mono text-lg tracking-[0.2em] text-white/70">{SHORT_CODE}</p>
+          <p className="mt-2 font-mono text-lg tracking-[0.2em] text-white/70">{dialedCode}</p>
           <p
             className={cn(
               "mt-4 text-sm",
@@ -212,17 +232,23 @@ function InCallScreen({
 export function PhoneTestCall({
   agentId,
   contactName,
+  supportedLanguages = ["en"],
 }: {
   agentId: string;
   contactName: string;
+  supportedLanguages?: CallLanguage[];
 }) {
   const [digits, setDigits] = useState("");
   const [phase, setPhase] = useState<CallPhase>("idle");
   const [session, setSession] = useState<TokenResponse | null>(null);
+  const [dialedCode, setDialedCode] = useState<string>("7856");
   const [elapsedSec, setElapsedSec] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [showContacts, setShowContacts] = useState(false);
   const connectedAtRef = useRef<number | null>(null);
   const callGenerationRef = useRef(0);
+  const selectedLanguage = languageFromDigits(digits);
+  const canCall = Boolean(selectedLanguage);
 
   useEffect(() => {
     if (phase !== "active") return;
@@ -251,14 +277,23 @@ export function PhoneTestCall({
   }, [session]);
 
   const startCall = useCallback(async () => {
-    if (digits !== SHORT_CODE) {
-      setError(`Dial ${SHORT_CODE} to reach the receptionist.`);
+    const language = languageFromDigits(digits);
+    if (!language) {
+      setError("Dial 7856 for English or 7855 for Amharic.");
+      return;
+    }
+    if (!supportedLanguages.includes(language)) {
+      setError(
+        `${labelForLanguage(language)} is not enabled for this receptionist. Enable it under Agents → Edit → Call languages.`,
+      );
       return;
     }
 
     const generation = callGenerationRef.current + 1;
     callGenerationRef.current = generation;
+    setDialedCode(digits);
     setError(null);
+    setShowContacts(false);
     setPhase("ringing");
 
     try {
@@ -269,6 +304,7 @@ export function PhoneTestCall({
         body: JSON.stringify({
           participantName: "phone-caller",
           agentId,
+          language,
         }),
       });
 
@@ -295,7 +331,7 @@ export function PhoneTestCall({
       setSession(null);
       setError(callError instanceof Error ? callError.message : "Call failed.");
     }
-  }, [agentId, digits]);
+  }, [agentId, digits, supportedLanguages]);
 
   const pressKey = (digit: string) => {
     setError(null);
@@ -307,6 +343,7 @@ export function PhoneTestCall({
       <div className="mx-auto h-[680px] w-full max-w-[360px] overflow-hidden rounded-[36px] border border-black/40 bg-[#0b0d10] shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
         <InCallScreen
           contactName={contactName}
+          dialedCode={dialedCode}
           phase={phase === "active" ? "active" : "ringing"}
           elapsedSec={elapsedSec}
           onHangUp={hangUp}
@@ -318,13 +355,20 @@ export function PhoneTestCall({
   }
 
   if (phase === "ringing" && !session) {
-    // Token still loading — show ringing shell without LiveKit yet
     return (
       <div className="mx-auto h-[680px] w-full max-w-[360px] overflow-hidden rounded-[36px] border border-black/40 bg-[#0b0d10] shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
-        <RingingPlaceholder contactName={contactName} onHangUp={hangUp} />
+        <RingingPlaceholder
+          contactName={contactName}
+          dialedCode={dialedCode}
+          onHangUp={hangUp}
+        />
       </div>
     );
   }
+
+  const contactEntries = (Object.entries(SHORT_CODES) as Array<[ShortCode, CallLanguage]>).filter(
+    ([, language]) => supportedLanguages.includes(language),
+  );
 
   return (
     <div className="mx-auto flex h-[680px] w-full max-w-[360px] flex-col overflow-hidden rounded-[36px] border border-black/10 bg-[#f3f1ec] shadow-[0_30px_80px_rgba(40,36,28,0.18)]">
@@ -340,52 +384,81 @@ export function PhoneTestCall({
           <p className="font-mono text-4xl tracking-[0.18em] text-[#111]">
             {digits || <span className="text-black/20">····</span>}
           </p>
-          {digits === SHORT_CODE ? (
-            <p className="mt-3 text-sm text-black/50">{contactName}</p>
+          {selectedLanguage ? (
+            <p className="mt-3 text-sm text-black/50">
+              {contactName} · {labelForLanguage(selectedLanguage)}
+            </p>
           ) : (
-            <p className="mt-3 text-sm text-black/35">Dial short code {SHORT_CODE}</p>
+            <p className="mt-3 text-sm text-black/35">Dial 7856 English · 7855 Amharic</p>
           )}
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-x-4 gap-y-3">
-          {KEYS.map((key) => (
-            <button
-              key={key.digit}
-              type="button"
-              onClick={() => pressKey(key.digit)}
-              className="flex h-[68px] flex-col items-center justify-center rounded-full bg-white shadow-[0_1px_0_rgba(0,0,0,0.04)] transition active:scale-95 active:bg-[#ebe8e1]"
-            >
-              <span className="text-[26px] font-light leading-none text-[#111]">{key.digit}</span>
-              {key.letters ? (
-                <span className="mt-1 text-[9px] font-medium tracking-[0.2em] text-black/35">
-                  {key.letters}
+        {showContacts ? (
+          <div className="mt-4 space-y-2">
+            {contactEntries.map(([code, language]) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => {
+                  setDigits(code);
+                  setShowContacts(false);
+                  setError(null);
+                }}
+                className="flex w-full items-center justify-between rounded-2xl bg-white px-4 py-3 text-left shadow-[0_1px_0_rgba(0,0,0,0.04)] transition active:scale-[0.99]"
+              >
+                <span className="text-sm font-medium text-[#111]">
+                  Solar {language === "am" ? "AM" : "EN"} · {labelForLanguage(language)}
                 </span>
-              ) : (
-                <span className="mt-1 h-[11px]" />
-              )}
-            </button>
-          ))}
-        </div>
+                <span className="font-mono text-sm tracking-widest text-black/45">{code}</span>
+              </button>
+            ))}
+            {!contactEntries.length ? (
+              <p className="text-center text-xs text-black/40">
+                No languages enabled. Update Agents → Edit → Call languages.
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <div className="mt-4 grid grid-cols-3 gap-x-4 gap-y-3">
+            {KEYS.map((key) => (
+              <button
+                key={key.digit}
+                type="button"
+                onClick={() => pressKey(key.digit)}
+                className="flex h-[68px] flex-col items-center justify-center rounded-full bg-white shadow-[0_1px_0_rgba(0,0,0,0.04)] transition active:scale-95 active:bg-[#ebe8e1]"
+              >
+                <span className="text-[26px] font-light leading-none text-[#111]">{key.digit}</span>
+                {key.letters ? (
+                  <span className="mt-1 text-[9px] font-medium tracking-[0.2em] text-black/35">
+                    {key.letters}
+                  </span>
+                ) : (
+                  <span className="mt-1 h-[11px]" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="mt-auto flex items-center justify-between px-4 pb-10 pt-6">
           <button
             type="button"
             onClick={() => {
-              setDigits(SHORT_CODE);
+              setShowContacts((open) => !open);
               setError(null);
             }}
             className="text-xs font-medium tracking-wide text-black/40 transition hover:text-black/70"
           >
-            Contacts
+            {showContacts ? "Keypad" : "Contacts"}
           </button>
 
           <button
             type="button"
             onClick={() => void startCall()}
-            disabled={digits !== SHORT_CODE}
+            disabled={!canCall}
             className={cn(
               "flex size-[72px] items-center justify-center rounded-full transition",
-              digits === SHORT_CODE
+              canCall
                 ? "bg-[#1f9d55] text-white shadow-[0_12px_28px_rgba(31,157,85,0.4)] hover:bg-[#18864a] active:scale-95"
                 : "bg-black/10 text-black/25",
             )}
@@ -411,7 +484,7 @@ export function PhoneTestCall({
           <p className="pb-6 text-center text-xs text-red-600">{error}</p>
         ) : (
           <p className="pb-6 text-center text-[11px] text-black/30">
-            Tap Contacts to fill {SHORT_CODE}
+            Dial 7856 English · 7855 Amharic
           </p>
         )}
       </div>
@@ -421,9 +494,11 @@ export function PhoneTestCall({
 
 function RingingPlaceholder({
   contactName,
+  dialedCode,
   onHangUp,
 }: {
   contactName: string;
+  dialedCode: string;
   onHangUp: () => void;
 }) {
   useRingtone(true);
@@ -437,7 +512,7 @@ function RingingPlaceholder({
           {contactName.slice(0, 1).toUpperCase()}
         </div>
         <h2 className="mt-6 text-3xl font-light tracking-tight">{contactName}</h2>
-        <p className="mt-2 font-mono text-lg tracking-[0.2em] text-white/70">{SHORT_CODE}</p>
+        <p className="mt-2 font-mono text-lg tracking-[0.2em] text-white/70">{dialedCode}</p>
         <p className="mt-4 animate-pulse text-sm text-emerald-300/90">Calling…</p>
       </div>
       <button

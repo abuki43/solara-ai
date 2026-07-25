@@ -109,6 +109,7 @@ type VoiceDemoProps = {
   receptionistName?: string;
   buttonLabel?: string;
   accentColor?: string;
+  language?: "en" | "am";
 };
 
 export function VoiceDemo({
@@ -120,6 +121,7 @@ export function VoiceDemo({
   receptionistName = "AI Receptionist",
   buttonLabel = "Start Call",
   accentColor = "#7cf0ff",
+  language = "en",
 }: VoiceDemoProps) {
   const [session, setSession] = useState<TokenResponse | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -138,6 +140,7 @@ export function VoiceDemo({
         credentials: "include",
         body: JSON.stringify({
           participantName: "demo-caller",
+          language,
           ...(agentId ? { agentId } : { agentSlug: resolvedSlug }),
         }),
       });
@@ -156,7 +159,7 @@ export function VoiceDemo({
     } finally {
       setIsConnecting(false);
     }
-  }, [agentId, agentSlug]);
+  }, [agentId, agentSlug, language]);
 
   const endCall = useCallback(() => {
     if (session) {

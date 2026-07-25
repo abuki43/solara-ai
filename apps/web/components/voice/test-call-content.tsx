@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 
 import { PhoneTestCall } from "@/components/voice/phone-test-call";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,6 +12,19 @@ export function TestCallContent({ agentId }: { agentId?: string }) {
     { id: agentId! },
     { enabled: Boolean(agentId), retry: false },
   );
+
+  const supportedLanguages = useMemo(() => {
+    if (!agent) return ["en"] as Array<"en" | "am">;
+    const options = new Set<"en" | "am">();
+    if (agent.primaryLanguage === "en" || agent.primaryLanguage === "am") {
+      options.add(agent.primaryLanguage);
+    }
+    for (const language of agent.additionalLanguages ?? []) {
+      if (language === "en" || language === "am") options.add(language);
+    }
+    if (!options.size) options.add("en");
+    return [...options];
+  }, [agent]);
 
   if (!agentId) {
     return (
@@ -40,5 +54,11 @@ export function TestCallContent({ agentId }: { agentId?: string }) {
 
   const contactName = agent.businessName || agent.name;
 
-  return <PhoneTestCall agentId={agent.id} contactName={contactName} />;
+  return (
+    <PhoneTestCall
+      agentId={agent.id}
+      contactName={contactName}
+      supportedLanguages={supportedLanguages}
+    />
+  );
 }

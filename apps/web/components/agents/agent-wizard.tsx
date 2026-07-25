@@ -170,7 +170,8 @@ export function AgentWizard({ mode, agentId }: AgentWizardProps) {
               <strong>Use case:</strong> {useCase}
             </p>
             <p>
-              <strong>Call language:</strong> English
+              <strong>Call languages:</strong> Configure on the Languages card after save (7856 EN ·
+              7855 AM)
             </p>
             <p>
               <strong>Public URL:</strong>{" "}

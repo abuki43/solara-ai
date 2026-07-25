@@ -25,7 +25,7 @@ export default async function TestCallPage({
       <div className="relative z-10 w-full max-w-lg space-y-5">
         <div className="text-center">
           <p className="font-pixel text-[10px] tracking-[0.28em] text-black/40">SOLAR AI</p>
-          <p className="mt-2 text-sm text-black/45">Dial 7856 · test call</p>
+          <p className="mt-2 text-sm text-black/45">Dial 7856 English · 7855 Amharic</p>
         </div>
         <TestCallContent agentId={agentId} />
       </div>
