@@ -13,7 +13,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3000";
+const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? "";
 
 type TokenResponse = {
   token: string;
@@ -102,9 +102,18 @@ function ActiveCall({
 type VoiceDemoProps = {
   compact?: boolean;
   className?: string;
+  agentId?: string;
+  agentSlug?: string;
+  receptionistName?: string;
 };
 
-export function VoiceDemo({ compact = false, className }: VoiceDemoProps) {
+export function VoiceDemo({
+  compact = false,
+  className,
+  agentId,
+  agentSlug,
+  receptionistName = "AI Receptionist",
+}: VoiceDemoProps) {
   const [session, setSession] = useState<TokenResponse | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -114,14 +123,21 @@ export function VoiceDemo({ compact = false, className }: VoiceDemoProps) {
     setError(null);
 
     try {
+      const resolvedSlug =
+        agentSlug ?? (!agentId ? process.env.NEXT_PUBLIC_DEMO_AGENT_SLUG ?? "bella-salon" : undefined);
       const response = await fetch(`${SERVER_URL}/api/livekit/token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ participantName: "demo-caller" }),
+        credentials: "include",
+        body: JSON.stringify({
+          participantName: "demo-caller",
+          ...(agentId ? { agentId } : { agentSlug: resolvedSlug }),
+        }),
       });
 
       if (!response.ok) {
-        throw new Error("Could not start call. Check server and LiveKit credentials.");
+        const body = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? "Could not start call. Please try again.");
       }
 
       const data = (await response.json()) as TokenResponse;
@@ -133,11 +149,18 @@ export function VoiceDemo({ compact = false, className }: VoiceDemoProps) {
     } finally {
       setIsConnecting(false);
     }
-  }, []);
+  }, [agentId, agentSlug]);
 
   const endCall = useCallback(() => {
+    if (session) {
+      void fetch(`${SERVER_URL}/api/livekit/end`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roomName: session.roomName, outcome: "completed" }),
+      });
+    }
     setSession(null);
-  }, []);
+  }, [session]);
 
   return (
     <div
@@ -157,7 +180,7 @@ export function VoiceDemo({ compact = false, className }: VoiceDemoProps) {
             <p className="font-pixel text-[10px] tracking-[0.2em] text-black/40">LIVE VOICE DEMO</p>
           </div>
           <h3 className="font-display text-xl font-normal tracking-tight text-[#111]">
-            Bella Salon Receptionist
+            {receptionistName}
           </h3>
           <p className="mt-1 text-xs text-black/40">Natural AI conversation · Available now</p>
         </div>
