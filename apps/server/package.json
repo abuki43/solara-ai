@@ -20,6 +20,7 @@
     "cors": "^2.8.6",
     "dotenv": "catalog:",
     "express": "^5.2.1",
+    "livekit-server-sdk": "^2.15.0",
     "zod": "catalog:"
   },
   "devDependencies": {

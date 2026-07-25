@@ -6,19 +6,40 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express from "express";
+import { livekitRouter } from "./routes/livekit.js";
 
 const app = express();
 
+function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) return true;
+
+  if (env.NODE_ENV === "development" && /^http:\/\/localhost:\d+$/.test(origin)) {
+    return true;
+  }
+
+  return origin === env.CORS_ORIGIN;
+}
+
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    origin(origin, callback) {
+      if (isAllowedOrigin(origin)) {
+        callback(null, origin ?? env.CORS_ORIGIN);
+        return;
+      }
+
+      callback(new Error(`Origin ${origin ?? "unknown"} not allowed by CORS`));
+    },
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   }),
 );
 
+app.use(express.json());
+
 app.all("/api/auth{/*path}", toNodeHandler(auth));
+app.use("/api/livekit", livekitRouter);
 
 app.use(
   "/trpc",
@@ -27,8 +48,6 @@ app.use(
     createContext,
   }),
 );
-
-app.use(express.json());
 
 app.get("/", (_req, res) => {
   res.status(200).send("OK");
