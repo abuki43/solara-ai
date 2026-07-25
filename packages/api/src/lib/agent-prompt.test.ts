@@ -77,10 +77,11 @@ describe("buildAgentPrompt", () => {
   });
 
   it("uses a company-branded customer support identity", () => {
-    expect(prompt).toContain("Bella Salon's AI customer support assistant");
-    expect(prompt).toContain('Never describe yourself with the robotic phrase "AI agent."');
+    expect(prompt).toContain("Bella Salon's customer support team");
+    expect(prompt).toContain("real customer support representative");
+    expect(prompt).toContain('Never use stiff phrases like "AI agent,"');
     expect(buildDefaultGreeting("Bella Salon")).toBe(
-      "Hello, you've reached Bella Salon. I'm Bella Salon's AI customer support assistant. How can I help you today?",
+      "Thank you for calling Bella Salon. You've reached our customer support. I'm an AI assistant here to help — how can I help you today?",
     );
   });
 

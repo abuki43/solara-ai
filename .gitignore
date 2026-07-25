@@ -65,3 +65,7 @@ coverage
 tmp
 temp
 hack1.jpg
+
+# Local Sprint 4 file uploads
+uploads
+**/uploads

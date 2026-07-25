@@ -39,7 +39,7 @@ const officeHours: BusinessHours = {
 };
 
 export function buildDefaultGreeting(businessName: string): string {
-  return `Hello, you've reached ${businessName}. I'm ${businessName}'s AI customer support assistant. How can I help you today?`;
+  return `Thank you for calling ${businessName}. You've reached our customer support. I'm an AI assistant here to help — how can I help you today?`;
 }
 
 function service(
@@ -69,7 +69,8 @@ export const USE_CASE_TEMPLATES: Record<
       service("Hair Color", 500, 90),
       service("Manicure", 150, 45),
     ],
-    greeting: buildDefaultGreeting,
+    greeting: (businessName) =>
+      `Thank you for calling ${businessName}. You've reached our customer support. I'm an AI assistant and I can help with hours, services, prices, or booking. How can I help you today?`,
   },
   clinic: {
     hours: clinicHours,
@@ -77,12 +78,14 @@ export const USE_CASE_TEMPLATES: Record<
       service("Consultation", 300, 30),
       service("Follow-up Visit", 150, 20),
     ],
-    greeting: buildDefaultGreeting,
+    greeting: (businessName) =>
+      `Thank you for calling ${businessName}. You've reached our front desk support. I'm an AI assistant and I can help with hours, services, or appointments. How can I help you today?`,
   },
   restaurant: {
     hours: restaurantHours,
     services: [service("Table Reservation", 0, 90)],
-    greeting: buildDefaultGreeting,
+    greeting: (businessName) =>
+      `Thank you for calling ${businessName}. You've reached our customer support. I'm an AI assistant — are you calling to reserve a table or ask a question?`,
   },
   general: {
     hours: officeHours,
