@@ -63,7 +63,7 @@ export const agents = pgTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("agents_org_slug_idx").on(table.organizationId, table.slug),
+    uniqueIndex("agents_slug_idx").on(table.slug),
     index("agents_organizationId_idx").on(table.organizationId),
   ],
 );
