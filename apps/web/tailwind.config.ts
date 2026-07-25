@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-ibm-plex)", "system-ui", "sans-serif"],
         display: ["var(--font-ibm-plex)", "system-ui", "sans-serif"],
         pixel: ["var(--font-courier)", "monospace"],
       },
