@@ -24,14 +24,18 @@ function isAuthorized(req: { header(name: string): string | undefined }) {
 }
 
 function findService(services: AgentService[], serviceName: string, enabledIds?: string[] | null) {
-  const normalized = serviceName.trim().toLowerCase();
+  const normalizedKey = serviceName.trim().toLowerCase().replace(/\s+/g, "");
   return services.find(
-    (service) =>
-      service.bookable &&
-      (!enabledIds?.length || enabledIds.includes(service.id)) &&
-      (service.name.toLowerCase() === normalized ||
-        service.name.toLowerCase().includes(normalized) ||
-        normalized.includes(service.name.toLowerCase())),
+    (service) => {
+      if (!service.bookable) return false;
+      if (enabledIds?.length && !enabledIds.includes(service.id)) return false;
+      const serviceKey = service.name.trim().toLowerCase().replace(/\s+/g, "");
+      return (
+        serviceKey === normalizedKey ||
+        serviceKey.includes(normalizedKey) ||
+        normalizedKey.includes(serviceKey)
+      );
+    },
   );
 }
 
@@ -447,7 +451,7 @@ internalBookingRouter.post("/agent/:id/booking", async (req, res) => {
     .toFormat("cccc, LLLL d 'at' h:mm a");
   await db
     .update(callSessions)
-    .set({ bookingId: booking.id, outcome: "booking_confirmed" })
+    .set({ bookingId: booking.id, outcome: "booked" })
     .where(eq(callSessions.roomName, input.data.roomName));
   res.json({
     success: true,
@@ -541,7 +545,7 @@ internalBookingRouter.post("/agent/:id/booking/cancel", async (req, res) => {
   }
   await db
     .update(callSessions)
-    .set({ bookingId: booking.id, outcome: "booking_cancelled" })
+    .set({ bookingId: booking.id, outcome: "completed" })
     .where(eq(callSessions.roomName, input.data.roomName));
   const telegramDelivered = await sendLifecycleTelegram(result, cancelled, "cancelled");
   res.json({
@@ -656,7 +660,7 @@ internalBookingRouter.post("/agent/:id/booking/reschedule", async (req, res) => 
   }
   await db
     .update(callSessions)
-    .set({ bookingId: replacementId, outcome: "booking_rescheduled" })
+    .set({ bookingId: replacementId, outcome: "booked" })
     .where(eq(callSessions.roomName, input.data.roomName));
   const telegramDelivered = await sendLifecycleTelegram(result, replacement!, "rescheduled");
   res.json({

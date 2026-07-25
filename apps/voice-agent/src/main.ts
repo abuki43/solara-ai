@@ -10,6 +10,7 @@ import {
   type BookingRescheduleRequest,
   type HandoffRequest,
 } from "./agent.ts";
+import { normalizeServiceName, resolveBookingDate } from "./booking-input.ts";
 
 dotenv.config({ path: "../../apps/server/.env" });
 
@@ -33,6 +34,7 @@ type AgentConfig = {
   };
   organization: {
     name: string;
+    timezone: string;
   };
   prompt: string;
   enabledTools: string[];
@@ -89,7 +91,44 @@ async function fetchAgentConfig(agentId: string): Promise<AgentConfig> {
   return (await response.json()) as AgentConfig;
 }
 
-function createHandoffHandler(agentId: string, roomName: string) {
+async function postCallLog(input: {
+  roomName: string;
+  language?: "en" | "am" | "om";
+  startedAt: Date;
+  toolsUsed: string[];
+  failed?: boolean;
+}) {
+  const apiUrl = process.env.INTERNAL_API_URL ?? "http://localhost:3000";
+  const apiKey = process.env.INTERNAL_API_KEY;
+  if (!apiKey || !input.roomName.startsWith("call-")) return;
+
+  try {
+    await fetch(`${apiUrl}/api/internal/call-log`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Internal-Key": apiKey,
+      },
+      body: JSON.stringify({
+        roomName: input.roomName,
+        language: input.language ?? "en",
+        startedAt: input.startedAt.toISOString(),
+        endedAt: new Date().toISOString(),
+        toolsUsed: input.toolsUsed,
+        failed: input.failed,
+      }),
+      signal: AbortSignal.timeout(8_000),
+    });
+  } catch (error) {
+    console.warn("Failed to persist call log", error);
+  }
+}
+
+function createHandoffHandler(
+  agentId: string,
+  roomName: string,
+  onSuccess?: () => void,
+) {
   return async (input: HandoffRequest): Promise<string> => {
     const apiUrl = process.env.INTERNAL_API_URL ?? "http://localhost:3000";
     const apiKey = process.env.INTERNAL_API_KEY;
@@ -120,6 +159,7 @@ function createHandoffHandler(agentId: string, roomName: string) {
           "The handoff could not be delivered. Ask the caller to contact the business directly."
         );
       }
+      onSuccess?.();
       return body?.message ?? "The request was delivered successfully.";
     } catch {
       return "The handoff service is temporarily unavailable. Ask the caller to contact the business directly.";
@@ -127,16 +167,34 @@ function createHandoffHandler(agentId: string, roomName: string) {
   };
 }
 
-function createAvailabilityHandler(agentId: string) {
+function createAvailabilityHandler(
+  agentId: string,
+  timezone: string,
+  onSuccess?: () => void,
+) {
   return async (input: AvailabilityRequest): Promise<string> => {
     const apiUrl = process.env.INTERNAL_API_URL ?? "http://localhost:3000";
     const apiKey = process.env.INTERNAL_API_KEY;
     if (!apiKey) return "Availability is temporarily unavailable.";
 
+    const serviceName = normalizeServiceName(input.serviceName);
+    const resolvedDate = resolveBookingDate(input.date, timezone);
+    console.info("[check_availability]", {
+      agentId,
+      serviceName,
+      rawDate: input.date,
+      resolvedDate,
+      timezone,
+    });
+
+    if (!resolvedDate) {
+      return `Could not understand the date "${input.date}". Ask for a specific day or use today, tomorrow, or a weekday name.`;
+    }
+
     try {
       const query = new URLSearchParams({
-        serviceName: input.serviceName,
-        date: input.date,
+        serviceName,
+        date: resolvedDate,
       });
       const response = await fetch(
         `${apiUrl}/api/internal/agent/${encodeURIComponent(agentId)}/availability?${query}`,
@@ -152,22 +210,42 @@ function createAvailabilityHandler(agentId: string) {
             slots?: Array<{ startTime: string; localTime: string }>;
           }
         | null;
-      if (!response.ok) return body?.error ?? "Availability could not be checked.";
-      if (!body?.slots?.length) {
-        return `There are no available ${input.serviceName} appointments on ${input.date}.`;
+      if (!response.ok) {
+        console.warn("[check_availability] failed", {
+          status: response.status,
+          error: body?.error,
+          serviceName,
+          resolvedDate,
+        });
+        return body?.error ?? "Availability could not be checked.";
       }
+      onSuccess?.();
+      if (!body?.slots?.length) {
+        return `No ${serviceName} appointments are available on ${resolvedDate}. The business may be closed that day or all slots are booked. Ask if they would like another day and call check_availability again.`;
+      }
+      console.info("[check_availability] success", {
+        serviceName,
+        resolvedDate,
+        slotCount: body.slots.length,
+      });
       return JSON.stringify({
         timezone: body.timezone,
+        date: resolvedDate,
         availableTimes: body.slots,
         instruction: "Offer only these times and preserve the exact startTime when booking.",
       });
-    } catch {
+    } catch (error) {
+      console.warn("[check_availability] error", error);
       return "Availability is temporarily unavailable. Do not offer an unverified time.";
     }
   };
 }
 
-function createBookingHandler(agentId: string, roomName: string) {
+function createBookingHandler(
+  agentId: string,
+  roomName: string,
+  onSuccess?: () => void,
+) {
   return async (input: BookingRequest): Promise<string> => {
     const apiUrl = process.env.INTERNAL_API_URL ?? "http://localhost:3000";
     const apiKey = process.env.INTERNAL_API_KEY;
@@ -182,7 +260,11 @@ function createBookingHandler(agentId: string, roomName: string) {
             "Content-Type": "application/json",
             "X-Internal-Key": apiKey,
           },
-          body: JSON.stringify({ ...input, roomName }),
+          body: JSON.stringify({
+            ...input,
+            serviceName: normalizeServiceName(input.serviceName),
+            roomName,
+          }),
           signal: AbortSignal.timeout(10_000),
         },
       );
@@ -192,6 +274,7 @@ function createBookingHandler(agentId: string, roomName: string) {
       if (!response.ok) {
         return body?.error ?? "The appointment could not be confirmed.";
       }
+      onSuccess?.();
       return `${body?.message ?? "The appointment is confirmed."} Confirmation code: ${body?.confirmationCode ?? body?.bookingId}.`;
     } catch {
       return "Booking is temporarily unavailable. Do not tell the caller the appointment is confirmed.";
@@ -301,24 +384,42 @@ export default defineAgent({
       return;
     }
 
+    const startedAt = new Date();
+    const roomName = ctx.room.name ?? "unknown-room";
+    const toolsUsed: string[] = [];
+    const trackTool = (tool: string) => {
+      if (!toolsUsed.includes(tool)) toolsUsed.push(tool);
+    };
+
+    ctx.addShutdownCallback(async () => {
+      await postCallLog({
+        roomName,
+        language: "en",
+        startedAt,
+        toolsUsed,
+      });
+    });
+
     const session = createSession(resolveEnglishVoiceId(config.agent.voiceConfig));
     const requestHandoff = config.enabledTools.includes("telegram_handoff")
-      ? createHandoffHandler(config.agent.id, ctx.room.name ?? "unknown-room")
+      ? createHandoffHandler(config.agent.id, roomName, () => trackTool("handoff"))
       : undefined;
     const checkAvailability = config.enabledTools.includes("booking")
-      ? createAvailabilityHandler(config.agent.id)
+      ? createAvailabilityHandler(config.agent.id, config.organization.timezone, () =>
+          trackTool("availability"),
+        )
       : undefined;
     const bookAppointment = config.enabledTools.includes("booking")
-      ? createBookingHandler(config.agent.id, ctx.room.name ?? "unknown-room")
+      ? createBookingHandler(config.agent.id, roomName, () => trackTool("booking"))
       : undefined;
     const lookupBooking = config.enabledTools.includes("booking")
       ? createBookingLookupHandler(config.agent.id)
       : undefined;
     const cancelBooking = config.enabledTools.includes("booking")
-      ? createBookingCancelHandler(config.agent.id, ctx.room.name ?? "unknown-room")
+      ? createBookingCancelHandler(config.agent.id, roomName)
       : undefined;
     const rescheduleBooking = config.enabledTools.includes("booking")
-      ? createBookingRescheduleHandler(config.agent.id, ctx.room.name ?? "unknown-room")
+      ? createBookingRescheduleHandler(config.agent.id, roomName)
       : undefined;
     await session.start({
       agent: createAgent(

@@ -1,3 +1,4 @@
+import { isProtectedCallOutcome } from "@solar-ai/api/lib/call-outcome";
 import { auth } from "@solar-ai/auth";
 import { db } from "@solar-ai/db";
 import { agents } from "@solar-ai/db/schema/agent";
@@ -129,6 +130,7 @@ livekitRouter.post("/token", publicCallLimiter, async (req, res) => {
       agentId: agent.id,
       roomName,
       callType,
+      language: "en",
       outcome: "started",
     });
 
@@ -163,16 +165,36 @@ livekitRouter.post("/end", async (req, res) => {
     return;
   }
 
-  const [updated] = await db
-    .update(callSessions)
-    .set({ outcome: input.data.outcome, endedAt: new Date() })
+  const [session] = await db
+    .select()
+    .from(callSessions)
     .where(eq(callSessions.roomName, input.data.roomName))
-    .returning({ id: callSessions.id });
+    .limit(1);
 
-  if (!updated) {
+  if (!session) {
     res.status(404).json({ error: "Call session not found" });
     return;
   }
+
+  const endedAt = new Date();
+  const durationSec = Math.max(
+    0,
+    Math.round((endedAt.getTime() - session.startedAt.getTime()) / 1000),
+  );
+  const nextOutcome = isProtectedCallOutcome(session.outcome)
+    ? session.outcome
+    : input.data.outcome === "disconnected"
+      ? "completed"
+      : input.data.outcome;
+
+  await db
+    .update(callSessions)
+    .set({
+      outcome: nextOutcome,
+      endedAt: session.endedAt ?? endedAt,
+      durationSec: session.durationSec ?? durationSec,
+    })
+    .where(eq(callSessions.roomName, input.data.roomName));
 
   res.json({ success: true });
 });

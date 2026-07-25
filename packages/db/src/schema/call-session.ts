@@ -1,4 +1,4 @@
-import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 import { agents } from "./agent";
 
@@ -11,8 +11,11 @@ export const callSessions = pgTable(
       .references(() => agents.id, { onDelete: "cascade" }),
     roomName: text("room_name").notNull().unique(),
     callType: text("call_type").notNull(),
+    language: text("language").notNull().default("en"),
     outcome: text("outcome").notNull().default("started"),
     bookingId: text("booking_id"),
+    durationSec: integer("duration_sec"),
+    summary: text("summary"),
     startedAt: timestamp("started_at").defaultNow().notNull(),
     endedAt: timestamp("ended_at"),
   },
