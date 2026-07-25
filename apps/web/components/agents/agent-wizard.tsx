@@ -13,7 +13,6 @@ import { trpc } from "@/lib/providers";
 import { cn } from "@/lib/utils";
 
 type UseCase = "salon" | "clinic" | "restaurant" | "general";
-type Language = "en" | "am" | "om";
 
 const useCases: { value: UseCase; label: string; description: string }[] = [
   { value: "salon", label: "Salon", description: "Hair, beauty, and spa services" },
@@ -21,15 +20,6 @@ const useCases: { value: UseCase; label: string; description: string }[] = [
   { value: "restaurant", label: "Restaurant", description: "Reservations and menu questions" },
   { value: "general", label: "General", description: "Any local business" },
 ];
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
-}
 
 type AgentWizardProps = {
   mode: "create" | "edit";
@@ -65,10 +55,6 @@ export function AgentWizard({ mode, agentId }: AgentWizardProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [useCase, setUseCase] = useState<UseCase>("salon");
-  const [slug, setSlug] = useState("");
-  const [slugTouched, setSlugTouched] = useState(false);
-  const [primaryLanguage, setPrimaryLanguage] = useState<Language>("en");
-  const [additionalLanguages, setAdditionalLanguages] = useState<Language[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -76,18 +62,8 @@ export function AgentWizard({ mode, agentId }: AgentWizardProps) {
       setName(existingAgent.name);
       setDescription(existingAgent.description ?? "");
       setUseCase(existingAgent.useCase);
-      setSlug(existingAgent.slug);
-      setSlugTouched(true);
-      setPrimaryLanguage(existingAgent.primaryLanguage);
-      setAdditionalLanguages((existingAgent.additionalLanguages ?? []) as Language[]);
     }
   }, [existingAgent]);
-
-  useEffect(() => {
-    if (!slugTouched && name) {
-      setSlug(slugify(name));
-    }
-  }, [name, slugTouched]);
 
   async function handleSubmit() {
     setError(null);
@@ -96,9 +72,6 @@ export function AgentWizard({ mode, agentId }: AgentWizardProps) {
       name: name.trim(),
       description: description.trim() || undefined,
       useCase,
-      slug: slug.trim(),
-      primaryLanguage,
-      additionalLanguages: additionalLanguages.filter((lang) => lang !== primaryLanguage),
     };
 
     try {
@@ -122,9 +95,9 @@ export function AgentWizard({ mode, agentId }: AgentWizardProps) {
     <Card className="max-w-2xl">
       <CardHeader>
         <CardTitle>{mode === "create" ? "New agent" : "Edit agent"}</CardTitle>
-        <CardDescription>Step {step} of 3</CardDescription>
+        <CardDescription>Step {step} of 2</CardDescription>
         <div className="flex gap-2 pt-2">
-          {[1, 2, 3].map((s) => (
+          {[1, 2].map((s) => (
             <div
               key={s}
               className={cn(
@@ -179,54 +152,16 @@ export function AgentWizard({ mode, agentId }: AgentWizardProps) {
                 ))}
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="agent-slug">URL slug</Label>
-              <Input
-                id="agent-slug"
-                value={slug}
-                onChange={(event) => {
-                  setSlugTouched(true);
-                  setSlug(event.target.value);
-                }}
-                placeholder="main-receptionist"
-              />
-              <p className="text-xs text-muted-foreground">Public call URL: /call/{slug || "your-slug"}</p>
-            </div>
+            {mode === "create" ? (
+              <p className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+                Your secure public call URL will be generated automatically from your business
+                name.
+              </p>
+            ) : null}
           </div>
         ) : null}
 
         {step === 2 ? (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-primary bg-primary/5 p-4">
-              <p className="text-sm font-medium">English</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                English is the supported call language for this release.
-              </p>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {["Amharic", "Afan Oromo"].map((language) => (
-                <div key={language} className="rounded-lg border border-dashed p-4 opacity-60">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium">{language}</p>
-                    <span className="rounded-full bg-muted px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Coming soon
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Available after speech quality and latency validation.
-                  </p>
-                </div>
-              ))}
-            </div>
-            <div className="rounded-lg bg-muted/50 p-3">
-              <p className="text-xs text-muted-foreground">
-                We only expose languages that are ready for reliable customer calls.
-              </p>
-              </div>
-          </div>
-        ) : null}
-
-        {step === 3 ? (
           <div className="space-y-3 rounded-lg border bg-muted/30 p-4 text-sm">
             <p>
               <strong>Name:</strong> {name}
@@ -235,14 +170,11 @@ export function AgentWizard({ mode, agentId }: AgentWizardProps) {
               <strong>Use case:</strong> {useCase}
             </p>
             <p>
-              <strong>Slug:</strong> {slug}
+              <strong>Call language:</strong> English
             </p>
             <p>
-              <strong>Primary language:</strong> {primaryLanguage}
-            </p>
-            <p>
-              <strong>Additional languages:</strong>{" "}
-              {additionalLanguages.length ? additionalLanguages.join(", ") : "None"}
+              <strong>Public URL:</strong>{" "}
+              {mode === "create" ? "Generated automatically after creation" : "Kept unchanged"}
             </p>
             <p>
               <strong>Status after save:</strong> Draft
@@ -263,10 +195,10 @@ export function AgentWizard({ mode, agentId }: AgentWizardProps) {
           ) : (
             <div />
           )}
-          {step < 3 ? (
+          {step < 2 ? (
             <Button
               type="button"
-              disabled={step === 1 && (!name.trim() || !slug.trim())}
+              disabled={step === 1 && !name.trim()}
               onClick={() => setStep(step + 1)}
             >
               Continue

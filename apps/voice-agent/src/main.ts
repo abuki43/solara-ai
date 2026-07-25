@@ -105,7 +105,7 @@ export default defineAgent({
     await ctx.connect();
 
     session.generateReply({
-      instructions: `Greet the caller warmly for ${config.organization.name}. Clearly disclose that you are an AI assistant. Use this configured greeting as the basis: ${config.agent.greeting ?? "Hello, how can I help you today?"}`,
+      instructions: `Deliver this configured company greeting naturally, without adding another introduction: ${config.agent.greeting ?? `Hello, you've reached ${config.organization.name}. I'm ${config.organization.name}'s AI customer support assistant. How can I help you today?`}`,
     });
   },
 });

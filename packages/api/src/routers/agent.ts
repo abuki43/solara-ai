@@ -33,19 +33,14 @@ const createAgentSchema = z.object({
   name: z.string().min(2).max(60),
   description: z.string().max(500).optional(),
   useCase: useCaseSchema,
-  slug: z
-    .string()
-    .min(3)
-    .max(40)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase letters, numbers, and hyphens"),
-  primaryLanguage: languageSchema,
-  additionalLanguages: z.array(languageSchema).default([]),
 });
 
 const updateAgentSchema = createAgentSchema
   .partial()
   .extend({
     id: z.string().min(1),
+    primaryLanguage: languageSchema.optional(),
+    additionalLanguages: z.array(languageSchema).optional(),
     greeting: z.string().min(1).max(500).optional(),
     hours: businessHoursSchema.optional(),
     services: z.array(serviceSchema).max(50).optional(),
@@ -67,6 +62,28 @@ async function assertUniqueSlug(slug: string, excludeId?: string) {
       message: "An agent with this URL slug already exists",
     });
   }
+}
+
+async function generateAgentIdentity(businessName: string) {
+  const base = (slugify(businessName) || "business").slice(0, 31);
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const id = crypto.randomUUID();
+    const suffix = id.replaceAll("-", "").slice(0, 8);
+    const slug = `${base}-${suffix}`;
+    const [existing] = await db
+      .select({ id: agents.id })
+      .from(agents)
+      .where(eq(agents.slug, slug))
+      .limit(1);
+
+    if (!existing) return { id, slug };
+  }
+
+  throw new TRPCError({
+    code: "INTERNAL_SERVER_ERROR",
+    message: "Could not generate a unique public call URL",
+  });
 }
 
 export const agentRouter = router({
@@ -95,27 +112,22 @@ export const agentRouter = router({
     }),
 
   create: orgOwnerProcedure.input(createAgentSchema).mutation(async ({ ctx, input }) => {
-    await assertUniqueSlug(input.slug);
-
-    const additionalLanguages = input.additionalLanguages.filter(
-      (lang) => lang !== input.primaryLanguage,
-    );
-
     const template = USE_CASE_TEMPLATES[input.useCase];
     const businessName = ctx.organization.name;
+    const identity = await generateAgentIdentity(businessName);
 
     const [created] = await db
       .insert(agents)
       .values({
-        id: crypto.randomUUID(),
+        id: identity.id,
         organizationId: ctx.organization.id,
         name: input.name,
-        slug: input.slug,
+        slug: identity.slug,
         description: input.description ?? null,
         useCase: input.useCase,
         status: "draft",
-        primaryLanguage: input.primaryLanguage,
-        additionalLanguages,
+        primaryLanguage: "en",
+        additionalLanguages: [],
         voiceConfig: {},
         businessName,
         hours: template.hours,
@@ -138,10 +150,6 @@ export const agentRouter = router({
 
     if (!existing) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Agent not found" });
-    }
-
-    if (updates.slug) {
-      await assertUniqueSlug(updates.slug, id);
     }
 
     let additionalLanguages = updates.additionalLanguages;
@@ -255,12 +263,4 @@ export const agentRouter = router({
       return result;
     }),
 
-  suggestSlug: orgOwnerProcedure
-    .input(z.object({ name: z.string().min(1) }))
-    .query(({ input }) => {
-      const base = slugify(input.name) || "agent";
-      return base;
-    }),
 });
-
-export { slugify };

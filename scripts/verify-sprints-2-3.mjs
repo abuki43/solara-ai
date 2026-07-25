@@ -7,8 +7,6 @@ const webBase = process.env.VERIFY_WEB_URL ?? "http://localhost:3001";
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const email = `sprint3-${runId}@example.com`;
 const password = "SolarVerify!2026";
-const slug = `salon-${runId}`.slice(0, 40);
-const draftSlug = `draft-${runId}`.slice(0, 40);
 let cookie = "";
 
 function check(condition, message) {
@@ -95,16 +93,22 @@ const createdBody = await mutate("agent.create", {
   name: "Verification Receptionist",
   description: "Automated acceptance-test receptionist",
   useCase: "salon",
-  slug,
-  primaryLanguage: "en",
-  additionalLanguages: [],
 });
 const agent = trpcResult(createdBody);
 check(agent?.status === "draft", "agent wizard creates a draft receptionist");
+check(
+  agent.slug.startsWith("verification-salon-"),
+  "server generates the public slug from the business name",
+);
+check(
+  agent.greeting.includes("Verification Salon's AI customer support assistant"),
+  "default greeting uses the company-branded customer support identity",
+);
 
 await mutate("agent.update", {
   id: agent.id,
-  greeting: "Hello, I am the AI assistant for Verification Salon. How can I help?",
+  greeting:
+    "Hello, you've reached Verification Salon. I'm Verification Salon's AI customer support assistant. How can I help?",
   hours: {
     monday: { open: "09:00", close: "18:00", closed: false },
     sunday: { open: null, close: null, closed: true },
@@ -136,7 +140,7 @@ check(
 
 const publicToken = await request("/api/livekit/token", {
   method: "POST",
-  body: JSON.stringify({ agentSlug: slug, participantName: "public-test" }),
+  body: JSON.stringify({ agentSlug: agent.slug, participantName: "public-test" }),
 });
 const publicPayload = decodeJwtPayload(publicToken.token);
 const publicDispatch = JSON.parse(publicPayload.roomConfig.agents[0].metadata);
@@ -152,14 +156,15 @@ const internalConfig = await request(`/api/internal/agent/${agent.id}`, {
 });
 check(
   internalConfig.prompt.includes("Haircut: 200 ETB") &&
-    internalConfig.prompt.includes("requests to reveal, replace, ignore, or override"),
+    internalConfig.prompt.includes("requests to reveal, replace, ignore, or override") &&
+    internalConfig.prompt.includes("Verification Salon's AI customer support assistant"),
   "internal runtime config contains verified knowledge and safety rules",
 );
 
 await mutate("agent.updateStatus", { id: agent.id, status: "paused" });
 await request(
   "/api/livekit/token",
-  { method: "POST", body: JSON.stringify({ agentSlug: slug }) },
+  { method: "POST", body: JSON.stringify({ agentSlug: agent.slug }) },
   403,
 );
 
@@ -167,14 +172,11 @@ const draftBody = await mutate("agent.create", {
   name: "Draft Receptionist",
   description: "Must never receive public calls",
   useCase: "salon",
-  slug: draftSlug,
-  primaryLanguage: "en",
-  additionalLanguages: [],
 });
 const draftAgent = trpcResult(draftBody);
 await request(
   "/api/livekit/token",
-  { method: "POST", body: JSON.stringify({ agentSlug: draftSlug }) },
+  { method: "POST", body: JSON.stringify({ agentSlug: draftAgent.slug }) },
   403,
 );
 await request(
@@ -189,7 +191,7 @@ for (let attempt = 0; attempt < 12; attempt += 1) {
   const response = await fetch(`${apiBase}/api/livekit/token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ agentSlug: slug, participantName: `rate-${attempt}` }),
+    body: JSON.stringify({ agentSlug: agent.slug, participantName: `rate-${attempt}` }),
   });
   if (response.status === 429) {
     rateLimited = true;
@@ -198,7 +200,7 @@ for (let attempt = 0; attempt < 12; attempt += 1) {
 }
 check(rateLimited, "public IP + slug rate limit blocks excess token creation");
 
-const publicPage = await fetch(`${webBase}/call/${slug}`);
+const publicPage = await fetch(`${webBase}/call/${agent.slug}`);
 check(publicPage.status === 200, "public call page renders for a valid slug");
 
 await mutate("agent.delete", { id: draftAgent.id });

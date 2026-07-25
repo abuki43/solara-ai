@@ -3,40 +3,44 @@ import type { AgentService, BusinessHours } from "@solar-ai/db/schema/agent";
 export type UseCase = "salon" | "clinic" | "restaurant" | "general";
 
 const defaultWeekdayHours: BusinessHours = {
-  mon: { open: "09:00", close: "19:00", closed: false },
-  tue: { open: "09:00", close: "19:00", closed: false },
-  wed: { open: "09:00", close: "19:00", closed: false },
-  thu: { open: "09:00", close: "19:00", closed: false },
-  fri: { open: "09:00", close: "19:00", closed: false },
-  sat: { open: "09:00", close: "19:00", closed: false },
-  sun: { open: null, close: null, closed: true },
+  monday: { open: "09:00", close: "19:00", closed: false },
+  tuesday: { open: "09:00", close: "19:00", closed: false },
+  wednesday: { open: "09:00", close: "19:00", closed: false },
+  thursday: { open: "09:00", close: "19:00", closed: false },
+  friday: { open: "09:00", close: "19:00", closed: false },
+  saturday: { open: "09:00", close: "19:00", closed: false },
+  sunday: { open: null, close: null, closed: true },
 };
 
 const clinicHours: BusinessHours = {
   ...defaultWeekdayHours,
-  sat: { open: "09:00", close: "13:00", closed: false },
-  sun: { open: null, close: null, closed: true },
+  saturday: { open: "09:00", close: "13:00", closed: false },
+  sunday: { open: null, close: null, closed: true },
 };
 
 const restaurantHours: BusinessHours = {
-  mon: { open: "11:00", close: "22:00", closed: false },
-  tue: { open: "11:00", close: "22:00", closed: false },
-  wed: { open: "11:00", close: "22:00", closed: false },
-  thu: { open: "11:00", close: "22:00", closed: false },
-  fri: { open: "11:00", close: "22:00", closed: false },
-  sat: { open: "11:00", close: "22:00", closed: false },
-  sun: { open: "11:00", close: "22:00", closed: false },
+  monday: { open: "11:00", close: "22:00", closed: false },
+  tuesday: { open: "11:00", close: "22:00", closed: false },
+  wednesday: { open: "11:00", close: "22:00", closed: false },
+  thursday: { open: "11:00", close: "22:00", closed: false },
+  friday: { open: "11:00", close: "22:00", closed: false },
+  saturday: { open: "11:00", close: "22:00", closed: false },
+  sunday: { open: "11:00", close: "22:00", closed: false },
 };
 
 const officeHours: BusinessHours = {
-  mon: { open: "09:00", close: "17:00", closed: false },
-  tue: { open: "09:00", close: "17:00", closed: false },
-  wed: { open: "09:00", close: "17:00", closed: false },
-  thu: { open: "09:00", close: "17:00", closed: false },
-  fri: { open: "09:00", close: "17:00", closed: false },
-  sat: { open: null, close: null, closed: true },
-  sun: { open: null, close: null, closed: true },
+  monday: { open: "09:00", close: "17:00", closed: false },
+  tuesday: { open: "09:00", close: "17:00", closed: false },
+  wednesday: { open: "09:00", close: "17:00", closed: false },
+  thursday: { open: "09:00", close: "17:00", closed: false },
+  friday: { open: "09:00", close: "17:00", closed: false },
+  saturday: { open: null, close: null, closed: true },
+  sunday: { open: null, close: null, closed: true },
 };
+
+export function buildDefaultGreeting(businessName: string): string {
+  return `Hello, you've reached ${businessName}. I'm ${businessName}'s AI customer support assistant. How can I help you today?`;
+}
 
 function service(
   name: string,
@@ -65,8 +69,7 @@ export const USE_CASE_TEMPLATES: Record<
       service("Hair Color", 500, 90),
       service("Manicure", 150, 45),
     ],
-    greeting: (businessName) =>
-      `Hello, thank you for calling ${businessName}. How can I help you today?`,
+    greeting: buildDefaultGreeting,
   },
   clinic: {
     hours: clinicHours,
@@ -74,20 +77,17 @@ export const USE_CASE_TEMPLATES: Record<
       service("Consultation", 300, 30),
       service("Follow-up Visit", 150, 20),
     ],
-    greeting: (businessName) =>
-      `Hello, you've reached ${businessName}. How may I assist you?`,
+    greeting: buildDefaultGreeting,
   },
   restaurant: {
     hours: restaurantHours,
     services: [service("Table Reservation", 0, 90)],
-    greeting: (businessName) =>
-      `Hello, welcome to ${businessName}. Are you calling to book a table?`,
+    greeting: buildDefaultGreeting,
   },
   general: {
     hours: officeHours,
     services: [service("General Inquiry", 0, 15, false)],
-    greeting: (businessName) =>
-      `Hello, thank you for calling ${businessName}. How can I help?`,
+    greeting: buildDefaultGreeting,
   },
 };
 
