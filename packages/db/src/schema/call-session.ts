@@ -12,6 +12,7 @@ export const callSessions = pgTable(
     roomName: text("room_name").notNull().unique(),
     callType: text("call_type").notNull(),
     outcome: text("outcome").notNull().default("started"),
+    bookingId: text("booking_id"),
     startedAt: timestamp("started_at").defaultNow().notNull(),
     endedAt: timestamp("ended_at"),
   },
