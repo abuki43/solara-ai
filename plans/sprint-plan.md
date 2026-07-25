@@ -623,7 +623,7 @@ Time: {timestamp}
 |---------|--------|
 | LiveKit Node voice agent | ✅ |
 | STT → LLM → TTS (English, LiveKit Inference) | ✅ |
-| Hardcoded Bella Salon prompt | ✅ |
+| Hardcoded Bella Salon prompt | Replaced by dynamic config in Sprint 3 |
 | Token API with agent dispatch | ✅ |
 | Next.js test call page | ✅ |
 | Turn detection + interruptions | ✅ |
@@ -675,7 +675,7 @@ User can sign up, land in dashboard, create draft agents via setup wizard.
 |------|------|
 | Route | `/agents/new`, `/agents/[id]/edit` |
 | Step 1 | Name, description, use case, slug (auto-generate). |
-| Step 2 | Primary language, additional languages. |
+| Step 2 | English enabled. Amharic and Afan Oromo visible as "coming soon," not selectable. |
 | Step 3 | Review + create as Draft. |
 | Templates | Seed hours/services/greeting from use case on create. |
 
@@ -701,16 +701,19 @@ User can sign up, land in dashboard, create draft agents via setup wizard.
 - [ ] Settings saves org profile
 - [ ] Agent selector shows created agents
 - [ ] Voice/Knowledge/Files/Tools/Calls show placeholder
+- [ ] First-agent setup checklist explains activate → test → share browser link
+- [ ] Settings shows account email and working logout
 
-### Still hardcoded
-- Test call uses Bella Salon voice agent (Sprint 3 fixes)
+### Release positioning
+- This is an English AI web-call receptionist in Sprints 2–3, not an Ethiopian PSTN replacement.
+- Keep the data model multi-agent, but optimize the onboarding UX for one successful first receptionist.
 
 ---
 
 ## Sprint 3 — Dynamic voice config + public call URL (1 week)
 
 ### Goal
-Voice agent reads agent from DB. Public call page works per slug.
+Voice agent reads the selected agent from DB. An active English receptionist works through a shareable browser-call URL per globally unique slug.
 
 ### Feature 3.1 — Prompt builder
 | Item | Spec |
@@ -720,14 +723,23 @@ Voice agent reads agent from DB. Public call page works per slug.
 | Output | Plain-text instructions string |
 | Templates | Per use_case base prompt + injected hours/services/greeting |
 | Voice rules | Always append (no markdown, 1-3 sentences, spell numbers). |
+| Safety rules | Unknown-answer fallback, instruction-override resistance, no fake booking confirmation. |
+| Clinic guardrail | Administrative information only; no medical advice, diagnosis, medication, or emergency triage. |
+
+### Feature 3.1a — Minimal call knowledge editor
+| Item | Spec |
+|------|------|
+| Fields | AI-disclosed greeting, seven-day hours, services, price, currency |
+| Scope | Enough to make Sprint 3 calls truthful; full FAQ/files/voice customization remains Sprint 4 |
 
 ### Feature 3.2 — Token API upgrade
 | Item | Spec |
 |------|------|
-| Input | `{ agentId }` or `{ agentSlug }`, optional `{ language }` |
+| Input | Authenticated `{ agentId }` test call or public `{ agentSlug }` call |
 | Validates | Agent exists, belongs to org (if auth), status = `active` for public |
-| Metadata | `{ agentId, language }` on RoomAgentDispatch |
+| Metadata | `{ agentId, language: "en", callType }` on RoomAgentDispatch |
 | Error 404 | Agent not found. 403: paused/draft on public call. |
+| Cost controls | 10-minute token TTL and IP + slug public-call rate limit |
 
 ### Feature 3.3 — Internal agent config API
 | Item | Spec |
@@ -751,28 +763,49 @@ Voice agent reads agent from DB. Public call page works per slug.
 | Activate | Validates: greeting set, ≥1 service, slug unique |
 | Pause | Immediate |
 | Test call modal | Passes agentId to token API |
-| Copy public URL | `http://localhost:3001/call/{slug}` |
+| Copy public URL | `{configuredWebOrigin}/call/{slug}`; never hardcode localhost in production |
 
 ### Feature 3.6 — Public call page
 | Item | Spec |
 |------|------|
 | Route | `/call/[slug]` |
 | UI | Reuse call component from test-call |
-| States | Active / Paused / Not found |
+| States | Loading / Active / Paused or draft / Not found / Rate limited |
 | Auth | None required |
+| Trust copy | Business name, AI disclosure, sensitive-data warning, "Powered by Solar AI" |
+
+### Feature 3.7 — Minimal call-session metadata
+- Persist agent, room, call type, start, end, and coarse outcome.
+- Do not record audio or retain transcripts in Sprint 3.
+- Use the metadata for debugging, abuse monitoring, latency checks, and future per-call cost tracking.
 
 ### Exit criteria
 - [ ] Agent with custom hours → call answers correctly
 - [ ] Draft agent → public URL returns 403/unavailable
 - [ ] Test call from dashboard uses selected agent
 - [ ] Bella Salon hardcode removed from voice-agent
+- [ ] Greeting always identifies the assistant as AI
+- [ ] Fixed eval set passes: hours, service price, address, closed day, unknown fact, prompt override
+- [ ] Public rate limit blocks excess token creation
+- [ ] First working call is reachable within five minutes of signup
+- [ ] First-response latency and estimated per-call cost are captured during release validation
+
+## Sprint 3.5 — Commercial proof: one booking flow + Telegram handoff
+
+Before spending another sprint on dashboard breadth, prove the workflow a salon can pay for:
+
+- Book one seeded service against a small, deterministic slot store.
+- Confirm a booking only after the booking tool returns success.
+- Collect unresolved caller name/contact with consent and send a Telegram handoff.
+- Measure booking completion rate, handoff delivery success, first-response latency, and call cost.
+- Keep broader tool configuration and scheduling flexibility for Sprint 6 hardening.
 
 ---
 
 ## Sprint 4 — Voice menu + Knowledge menu + Files menu (1 week)
 
 ### Goal
-Owner configures voice, structured knowledge, and file uploads via separate main menus.
+Owner expands the minimal Sprint 3 configuration with voice choices, FAQs, instructions, and file uploads.
 
 ### Feature 4.1 — Voice menu (full)
 All items from Voice menu spec above.
@@ -782,7 +815,7 @@ All items from Voice menu spec above.
 
 ### Feature 4.2 — Knowledge menu (full)
 All items from Knowledge menu spec above.
-- Hours grid, services table, FAQ CRUD
+- Full hours/services editor, FAQ CRUD, validation, and richer service metadata
 - About text + custom instructions
 - Live prompt preview panel
 
@@ -814,7 +847,7 @@ All items from Files menu spec above.
 ## Sprint 5 — Addis AI: Amharic & Afan Oromo (1–2 weeks)
 
 ### Goal
-Local language agents work with Addis voices and models.
+Local language agents work with Addis voices and models only after a fixed evaluation passes.
 
 ### Feature 5.1 — Addis AI env + client
 | Item | Spec |
@@ -848,13 +881,15 @@ Local language agents work with Addis voices and models.
 - [ ] Voice preview works for Addis voices
 - [ ] Bilingual agent: language selector on call page works
 - [ ] English agent unchanged (regression pass)
+- [ ] First-response latency, word error rate sample, answer quality, and interruption behavior meet written acceptance thresholds
+- [ ] Amharic/Oromo remain hidden from customer selection until all gates pass
 
 ---
 
 ## Sprint 6 — Tools menu: booking + Telegram (1 week)
 
 ### Goal
-Agent books appointments and sends Telegram handoffs during live calls.
+Harden and generalize the Sprint 3.5 booking and Telegram proof for owner configuration and wider use.
 
 ### Feature 6.1 — Tools menu UI
 Full spec from Tools menu section above.
@@ -959,12 +994,13 @@ Full spec from Calls menu section.
 | 1 ✅ | Done | Voice pipeline |
 | 2 | 5–7 days | Auth + Agents setup menu |
 | 3 | 5–7 days | Dynamic agent + public call URL |
+| 3.5 | 2–4 days | One salon booking flow + Telegram handoff proof |
 | 4 | 5–7 days | Voice + Knowledge + Files menus |
 | 5 | 7–10 days | Addis AI languages |
 | 6 | 5–7 days | Tools (booking + Telegram) |
 | 7 | 5–7 days | Calls summaries + embed + demo |
 
-**Total: ~7 weeks**
+**Total: ~7–8 weeks**
 
 ---
 
@@ -996,4 +1032,4 @@ Full spec from Calls menu section.
 
 ## Next step
 
-**Start Sprint 2:** `organizations` + `agents` schema → Better-Auth UI → dashboard shell → Agents wizard.
+**Current release gate:** finish Sprint 3 acceptance tests, validate the salon eval set and call cost, then build the Sprint 3.5 booking + Telegram proof before broader dashboard work.
