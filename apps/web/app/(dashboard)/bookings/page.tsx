@@ -5,7 +5,7 @@ export default function BookingsPage() {
   return (
     <DashboardShell
       title="Bookings"
-      description="Manage appointments, availability, blocked time, and delivery status"
+      description="Set up your calendar, manage appointments, and block unavailable time"
     >
       <BookingsPageContent />
     </DashboardShell>

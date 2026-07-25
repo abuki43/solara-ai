@@ -15,6 +15,14 @@ const nextConfig: NextConfig = {
         destination: `${serverUrl}/api/livekit/:path*`,
       },
       {
+        source: "/api/files/:path*",
+        destination: `${serverUrl}/api/files/:path*`,
+      },
+      {
+        source: "/api/voice/:path*",
+        destination: `${serverUrl}/api/voice/:path*`,
+      },
+      {
         source: "/trpc/:path*",
         destination: `${serverUrl}/trpc/:path*`,
       },
