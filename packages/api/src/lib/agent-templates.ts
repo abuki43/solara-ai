@@ -38,8 +38,11 @@ const officeHours: BusinessHours = {
   sunday: { open: null, close: null, closed: true },
 };
 
-export function buildDefaultGreeting(businessName: string): string {
-  return `Thank you for calling ${businessName}. You've reached our customer support. I'm an AI assistant here to help — how can I help you today?`;
+export function buildDefaultGreeting(businessName: string, bookingEnabled = false): string {
+  const closing = bookingEnabled
+    ? "Would you like to book an appointment, or do you have a question?"
+    : "How can I help you today?";
+  return `Thank you for calling ${businessName}. You've reached our customer support. ${closing}`;
 }
 
 function service(
@@ -70,7 +73,7 @@ export const USE_CASE_TEMPLATES: Record<
       service("Manicure", 150, 45),
     ],
     greeting: (businessName) =>
-      `Thank you for calling ${businessName}. You've reached our customer support. I'm an AI assistant and I can help with hours, services, prices, or booking. How can I help you today?`,
+      `Thank you for calling ${businessName}. You've reached our customer support. Would you like to book an appointment, or do you have a question?`,
   },
   clinic: {
     hours: clinicHours,
@@ -79,13 +82,13 @@ export const USE_CASE_TEMPLATES: Record<
       service("Follow-up Visit", 150, 20),
     ],
     greeting: (businessName) =>
-      `Thank you for calling ${businessName}. You've reached our front desk support. I'm an AI assistant and I can help with hours, services, or appointments. How can I help you today?`,
+      `Thank you for calling ${businessName}. You've reached our front desk. I can help with hours, services, or appointments. How can I help you today?`,
   },
   restaurant: {
     hours: restaurantHours,
     services: [service("Table Reservation", 0, 90)],
     greeting: (businessName) =>
-      `Thank you for calling ${businessName}. You've reached our customer support. I'm an AI assistant — are you calling to reserve a table or ask a question?`,
+      `Thank you for calling ${businessName}. You've reached our customer support. Are you calling to reserve a table or ask a question?`,
   },
   general: {
     hours: officeHours,

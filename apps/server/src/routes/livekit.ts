@@ -1,4 +1,5 @@
 import { isProtectedCallOutcome } from "@solar-ai/api/lib/call-outcome";
+import { agentSupportsLanguage } from "@solar-ai/api/lib/voice-catalog";
 import { auth } from "@solar-ai/auth";
 import { db } from "@solar-ai/db";
 import { agents } from "@solar-ai/db/schema/agent";
@@ -21,11 +22,16 @@ export const AGENT_NAME = "solar-receptionist";
 
 export const livekitRouter: Router = Router();
 
+function isAddisAmharicEnabled() {
+  return Boolean(env.ADDIS_AMHARIC_ENABLED && env.ADDIS_API_KEY);
+}
+
 const tokenInputSchema = z
   .object({
     agentId: z.string().min(1).optional(),
     agentSlug: z.string().min(3).max(40).optional(),
     participantName: z.string().min(1).max(100).optional(),
+    language: z.enum(["en", "am"]).optional(),
   })
   .refine((value) => Boolean(value.agentId) !== Boolean(value.agentSlug), {
     message: "Provide exactly one of agentId or agentSlug",
@@ -89,15 +95,30 @@ livekitRouter.post("/token", publicCallLimiter, async (req, res) => {
       return;
     }
 
-    if (agent.primaryLanguage !== "en") {
-      res.status(400).json({ error: "Only English calls are supported in this release" });
+    const language = input.language ?? (agent.primaryLanguage === "am" ? "am" : "en");
+    if (language === "am") {
+      if (!isAddisAmharicEnabled()) {
+        res.status(400).json({
+          error: "Amharic calls are not enabled. Set ADDIS_API_KEY and ADDIS_AMHARIC_ENABLED=true.",
+        });
+        return;
+      }
+      if (!agentSupportsLanguage(agent, "am")) {
+        res.status(400).json({ error: "This receptionist does not support Amharic" });
+        return;
+      }
+    } else if (language !== "en") {
+      res.status(400).json({ error: "Unsupported call language" });
+      return;
+    } else if (!agentSupportsLanguage(agent, "en") && agent.primaryLanguage !== "en") {
+      res.status(400).json({ error: "This receptionist does not support English calls" });
       return;
     }
 
     const roomName = `call-${agent.id.slice(0, 8)}-${randomUUID()}`;
     const dispatchMetadata = JSON.stringify({
       agentId: agent.id,
-      language: "en",
+      language,
       callType,
     });
 
@@ -130,7 +151,7 @@ livekitRouter.post("/token", publicCallLimiter, async (req, res) => {
       agentId: agent.id,
       roomName,
       callType,
-      language: "en",
+      language,
       outcome: "started",
     });
 
@@ -141,6 +162,7 @@ livekitRouter.post("/token", publicCallLimiter, async (req, res) => {
       url: env.LIVEKIT_URL,
       agentId: agent.id,
       callType,
+      language,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

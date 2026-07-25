@@ -127,7 +127,7 @@ async function seed() {
   }
 
   const greeting =
-    "Hello, thank you for calling Bella Salon. You've reached our customer support. I'm an AI assistant — how can I help you today?";
+    "Hello, thank you for calling Bella Salon. You've reached our customer support. How can I help you today?";
 
   const [existingAgent] = await db
     .select()
@@ -142,12 +142,15 @@ async function seed() {
       .set({
         organizationId,
         name: "Bella Receptionist",
-        description: "English browser receptionist for Bella Salon",
+        description: "Bilingual browser receptionist for Bella Salon (7856 EN · 7855 AM)",
         useCase: "salon",
         status: "active",
         primaryLanguage: "en",
-        additionalLanguages: [],
-        voiceConfig: { en: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc" },
+        additionalLanguages: ["am"],
+        voiceConfig: {
+          en: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc",
+          am: "am-hamen",
+        },
         greeting,
         tone: "friendly",
         businessName: DEMO_ORG_NAME,
@@ -167,12 +170,15 @@ async function seed() {
       organizationId,
       name: "Bella Receptionist",
       slug: DEMO_AGENT_SLUG,
-      description: "English browser receptionist for Bella Salon",
+      description: "Bilingual browser receptionist for Bella Salon (7856 EN · 7855 AM)",
       useCase: "salon",
       status: "active",
       primaryLanguage: "en",
-      additionalLanguages: [],
-      voiceConfig: { en: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc" },
+      additionalLanguages: ["am"],
+      voiceConfig: {
+        en: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc",
+        am: "am-hamen",
+      },
       greeting,
       tone: "friendly",
       businessName: DEMO_ORG_NAME,
@@ -272,6 +278,7 @@ async function seed() {
   console.log(`  Login: ${DEMO_EMAIL}`);
   console.log(`  Password: ${DEMO_PASSWORD}`);
   console.log(`  Public call: /call/${DEMO_AGENT_SLUG}`);
+  console.log(`  Phone short codes: 7856 English · 7855 Amharic`);
   console.log(`  Embed demo: /embed-demo.html`);
 }
 

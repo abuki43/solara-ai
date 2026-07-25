@@ -1,4 +1,4 @@
-import { ServerOptions, cli, defineAgent, inference, voice } from "@livekit/agents";
+import { ServerOptions, cli, defineAgent, inference, voice, type JobContext } from "@livekit/agents";
 import dotenv from "dotenv";
 import { fileURLToPath } from "node:url";
 import {
@@ -8,21 +8,28 @@ import {
   type BookingLookupRequest,
   type BookingRequest,
   type BookingRescheduleRequest,
+  type EndCallRequest,
   type HandoffRequest,
 } from "./agent.ts";
+import { isAddisAmharicRuntimeEnabled } from "./addis/client.ts";
+import { AddisSTT } from "./addis/stt.ts";
+import { AddisTTS } from "./addis/tts.ts";
 import { normalizeServiceName, resolveBookingDate } from "./booking-input.ts";
 
 dotenv.config({ path: "../../apps/server/.env" });
 
 export const AGENT_NAME = "solar-receptionist";
 
+type CallLanguage = "en" | "am";
+
 type DispatchMetadata = {
   agentId: string;
-  language: "en";
+  language: CallLanguage;
   callType: "test" | "public";
 };
 
 const DEFAULT_ENGLISH_VOICE_ID = "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc";
+const DEFAULT_AMHARIC_VOICE_ID = "am-hamen";
 
 type AgentConfig = {
   agent: {
@@ -45,7 +52,76 @@ function resolveEnglishVoiceId(voiceConfig?: Record<string, string> | null): str
   return configured || DEFAULT_ENGLISH_VOICE_ID;
 }
 
-function createSession(voiceId = DEFAULT_ENGLISH_VOICE_ID) {
+function resolveAmharicVoiceId(voiceConfig?: Record<string, string> | null): string {
+  const configured = voiceConfig?.am?.trim();
+  return configured || DEFAULT_AMHARIC_VOICE_ID;
+}
+
+function sanitizeGreetingText(text: string): string {
+  return text
+    .replace(/\s*I'm an AI assistant here to help\.?\s*/gi, " ")
+    .replace(/\s*I'm an AI assistant[—–-]?\s*/gi, " ")
+    .replace(/\s*I am an AI assistant\.?\s*/gi, " ")
+    .replace(/\s*I am the AI assistant for your business\.?\s*/gi, " ")
+    .replace(/\s*I am [^.]+\'s AI assistant\.?\s*/gi, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function resolveGreetingText(
+  greeting: string | null | undefined,
+  organizationName: string,
+  bookingEnabled: boolean,
+): string {
+  const bookingClosing =
+    "Would you like to book an appointment, or do you have a question?";
+  const defaultClosing = bookingEnabled
+    ? bookingClosing
+    : "How can I help you today?";
+
+  const configured = greeting?.trim();
+  if (configured) {
+    let resolved = sanitizeGreetingText(configured);
+    if (bookingEnabled) {
+      resolved = resolved
+        .replace(/\bhow can i help you today\??/i, bookingClosing)
+        .replace(/\bhow can i help\??/i, bookingClosing);
+    }
+    return resolved;
+  }
+
+  return `Thank you for calling ${organizationName}. You've reached our customer support. ${defaultClosing}`;
+}
+
+function languagePromptSuffix(language: CallLanguage): string {
+  if (language !== "am") return "";
+  return `
+
+Language rules:
+- Speak Amharic (Ge'ez script) for the entire call unless the caller clearly switches to English.
+- Keep replies short and natural for phone conversation.
+- When using tools, keep tool arguments in the expected formats (service names, ISO times, phone numbers).
+
+Call closing:
+- After helping, ask if there is anything else you can help with.
+- If the caller is done, say a brief goodbye and call end_call after they confirm.`;
+}
+
+function createSession(language: CallLanguage = "en", voiceId = DEFAULT_ENGLISH_VOICE_ID) {
+  if (language === "am") {
+    if (!isAddisAmharicRuntimeEnabled()) {
+      throw new Error("Amharic calls require ADDIS_API_KEY and ADDIS_AMHARIC_ENABLED=true");
+    }
+    return new voice.AgentSession({
+      stt: new AddisSTT("am"),
+      tts: new AddisTTS(voiceId),
+      turnHandling: {
+        turnDetection: new inference.TurnDetector(),
+        preemptiveGeneration: { enabled: false },
+      },
+    });
+  }
+
   return new voice.AgentSession({
     stt: new inference.STT({
       model: "deepgram/nova-3",
@@ -57,19 +133,23 @@ function createSession(voiceId = DEFAULT_ENGLISH_VOICE_ID) {
     }),
     turnHandling: {
       turnDetection: new inference.TurnDetector(),
-      preemptiveGeneration: { enabled: true },
+      preemptiveGeneration: { enabled: true, preemptiveTts: true },
     },
   });
 }
 
 function parseDispatchMetadata(raw: string): DispatchMetadata {
   const value = JSON.parse(raw) as Partial<DispatchMetadata>;
-  if (!value.agentId || value.language !== "en") {
-    throw new Error("Invalid or unsupported dispatch metadata");
+  if (!value.agentId) {
+    throw new Error("Invalid dispatch metadata");
+  }
+  const language: CallLanguage = value.language === "am" ? "am" : "en";
+  if (language === "am" && !isAddisAmharicRuntimeEnabled()) {
+    throw new Error("Amharic is not enabled on this voice agent");
   }
   return {
     agentId: value.agentId,
-    language: "en",
+    language,
     callType: value.callType === "public" ? "public" : "test",
   };
 }
@@ -360,16 +440,44 @@ function createBookingRescheduleHandler(agentId: string, roomName: string) {
   };
 }
 
+function createEndCallHandler(
+  ctx: JobContext,
+  roomName: string,
+  onSuccess?: () => void,
+) {
+  return async (input: EndCallRequest): Promise<string> => {
+    if (!input.confirmed) {
+      return "The caller has not confirmed they are finished. Ask if there is anything else you can help with.";
+    }
+
+    onSuccess?.();
+    console.info("[end_call]", { roomName });
+
+    setTimeout(() => {
+      void ctx
+        .deleteRoom(roomName)
+        .catch((error) => {
+          console.warn("[end_call] deleteRoom failed, shutting down job", error);
+          ctx.shutdown("call ended");
+        });
+    }, 2_500);
+
+    return "The call will end shortly. Give a brief warm goodbye now and do not ask further questions.";
+  };
+}
+
 export default defineAgent({
   entry: async (ctx) => {
     let config: AgentConfig;
+    let language: CallLanguage = "en";
 
     try {
       const metadata = parseDispatchMetadata(ctx.job.metadata);
+      language = metadata.language;
       config = await fetchAgentConfig(metadata.agentId);
     } catch (error) {
       console.error("Unable to load receptionist configuration", error);
-      const fallbackSession = createSession();
+      const fallbackSession = createSession("en");
       await fallbackSession.start({
         agent: createAgent(
           "You are a voice assistant handling a temporary service error. Apologize briefly, do not collect sensitive information, and ask the caller to try again later.",
@@ -377,10 +485,10 @@ export default defineAgent({
         room: ctx.room,
       });
       await ctx.connect();
-      fallbackSession.generateReply({
-        instructions:
-          "Tell the caller that the receptionist is temporarily unavailable and ask them to try again later.",
-      });
+      fallbackSession.say(
+        "Sorry, our receptionist is temporarily unavailable. Please try again in a few minutes.",
+        { addToChatCtx: true, allowInterruptions: true },
+      );
       return;
     }
 
@@ -394,13 +502,17 @@ export default defineAgent({
     ctx.addShutdownCallback(async () => {
       await postCallLog({
         roomName,
-        language: "en",
+        language,
         startedAt,
         toolsUsed,
       });
     });
 
-    const session = createSession(resolveEnglishVoiceId(config.agent.voiceConfig));
+    const voiceId =
+      language === "am"
+        ? resolveAmharicVoiceId(config.agent.voiceConfig)
+        : resolveEnglishVoiceId(config.agent.voiceConfig);
+    const session = createSession(language, voiceId);
     const requestHandoff = config.enabledTools.includes("telegram_handoff")
       ? createHandoffHandler(config.agent.id, roomName, () => trackTool("handoff"))
       : undefined;
@@ -421,24 +533,32 @@ export default defineAgent({
     const rescheduleBooking = config.enabledTools.includes("booking")
       ? createBookingRescheduleHandler(config.agent.id, roomName)
       : undefined;
+    const endCall = createEndCallHandler(ctx, roomName, () => trackTool("end_call"));
+    const bookingEnabled = config.enabledTools.includes("booking");
     await session.start({
       agent: createAgent(
-        config.prompt,
+        `${config.prompt}${languagePromptSuffix(language)}`,
         requestHandoff,
         checkAvailability,
         bookAppointment,
         lookupBooking,
         cancelBooking,
         rescheduleBooking,
+        endCall,
+        { language },
       ),
       room: ctx.room,
     });
 
     await ctx.connect();
 
-    session.generateReply({
-      instructions: `Deliver this configured company greeting naturally, like a real customer support representative answering the phone, without adding another introduction: ${config.agent.greeting ?? `Thank you for calling ${config.organization.name}. You've reached our customer support. I'm an AI assistant here to help — how can I help you today?`}`,
-    });
+    session.say(
+      resolveGreetingText(config.agent.greeting, config.organization.name, bookingEnabled),
+      {
+        addToChatCtx: true,
+        allowInterruptions: true,
+      },
+    );
   },
 });
 

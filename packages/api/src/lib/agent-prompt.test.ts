@@ -28,7 +28,7 @@ const agent: AgentPromptInput["agent"] = {
   primaryLanguage: "en",
   additionalLanguages: [],
   voiceConfig: {},
-  greeting: "Hello, I am Bella Salon's AI assistant.",
+  greeting: "Hello, you've reached Bella Salon customer support.",
   tone: "friendly",
   businessName: "Bella Salon",
   hours: {
@@ -81,7 +81,10 @@ describe("buildAgentPrompt", () => {
     expect(prompt).toContain("real customer support representative");
     expect(prompt).toContain('Never use stiff phrases like "AI agent,"');
     expect(buildDefaultGreeting("Bella Salon")).toBe(
-      "Thank you for calling Bella Salon. You've reached our customer support. I'm an AI assistant here to help — how can I help you today?",
+      "Thank you for calling Bella Salon. You've reached our customer support. How can I help you today?",
+    );
+    expect(buildDefaultGreeting("Bella Salon", true)).toBe(
+      "Thank you for calling Bella Salon. You've reached our customer support. Would you like to book an appointment, or do you have a question?",
     );
   });
 

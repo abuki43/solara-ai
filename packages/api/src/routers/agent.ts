@@ -223,10 +223,20 @@ export const agentRouter = router({
             message: "Add at least one service before activating this receptionist",
           });
         }
-        if (existing.primaryLanguage !== "en") {
+        if (existing.primaryLanguage === "am") {
+          const addisReady =
+            process.env.ADDIS_AMHARIC_ENABLED === "true" && Boolean(process.env.ADDIS_API_KEY);
+          if (!addisReady) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message:
+                "Amharic agents need ADDIS_API_KEY and ADDIS_AMHARIC_ENABLED=true before activation",
+            });
+          }
+        } else if (existing.primaryLanguage !== "en") {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Only English calls are supported in this release",
+            message: "Only English and Amharic (gated) calls are supported in this release",
           });
         }
         await assertUniqueSlug(existing.slug, existing.id);
@@ -254,6 +264,8 @@ export const agentRouter = router({
           useCase: agents.useCase,
           greeting: agents.greeting,
           businessName: agents.businessName,
+          primaryLanguage: agents.primaryLanguage,
+          additionalLanguages: agents.additionalLanguages,
           widgetButtonLabel: agents.widgetButtonLabel,
           widgetAccentColor: agents.widgetAccentColor,
           organizationName: organizations.name,

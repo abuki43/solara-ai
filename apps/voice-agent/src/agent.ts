@@ -1,6 +1,8 @@
 import { Agent, inference, llm } from "@livekit/agents";
 import { z } from "zod";
 
+import { AddisLLM } from "./addis/llm.ts";
+
 export type HandoffRequest = {
   callerName: string;
   callerContact: string;
@@ -36,6 +38,10 @@ export type BookingRescheduleRequest = BookingLookupRequest & {
   confirmed: true;
 };
 
+export type EndCallRequest = {
+  confirmed: true;
+};
+
 export function createAgent(
   instructions: string,
   requestHandoff?: (input: HandoffRequest) => Promise<string>,
@@ -44,7 +50,10 @@ export function createAgent(
   lookupBooking?: (input: BookingLookupRequest) => Promise<string>,
   cancelBooking?: (input: BookingCancelRequest) => Promise<string>,
   rescheduleBooking?: (input: BookingRescheduleRequest) => Promise<string>,
+  endCall?: (input: EndCallRequest) => Promise<string>,
+  options?: { language?: "en" | "am" },
 ) {
+  const language = options?.language ?? "en";
   const tools = {
     ...(requestHandoff
       ? {
@@ -143,11 +152,30 @@ export function createAgent(
           }),
         }
       : {}),
+    ...(endCall
+      ? {
+          end_call: llm.tool({
+            description:
+              "End the call after the caller confirms they need nothing else. Give a brief warm goodbye first, then call this tool once.",
+            parameters: z.object({
+              confirmed: z
+                .literal(true)
+                .describe(
+                  "True only after the caller explicitly says they are done, have no more questions, or goodbye",
+                ),
+            }),
+            execute: async (input) => endCall(input),
+          }),
+        }
+      : {}),
   };
 
   return Agent.create({
     instructions,
-    llm: new inference.LLM({ model: "google/gemma-4-31b-it" }),
+    llm:
+      language === "am"
+        ? new AddisLLM()
+        : new inference.LLM({ model: "google/gemini-2.5-flash-lite" }),
     tools,
   });
 }

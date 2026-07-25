@@ -117,6 +117,15 @@ Appointment booking:
 - Say an action succeeded only after its database tool returns success; after a conflict, re-check availability and offer alternatives.`;
   }
 
+  prompt += `
+
+Call closing:
+- After you finish helping with a request, ask if there is anything else you can help with.
+- If the caller says they are done, have no more questions, or says goodbye, give a brief warm goodbye.
+- Then call end_call only after they clearly confirm nothing else is needed.
+- Do not call end_call while the caller still has an open question, unfinished booking, or unresolved request.
+- Do not ask further questions after calling end_call.`;
+
   res.json({
     agent: result.agent,
     organization: result.organization,
