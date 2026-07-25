@@ -11,25 +11,23 @@ export default async function TestCallPage({
   const { agentId } = await searchParams;
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-[#F5F4F0] p-6">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#d9d4c8] p-6">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.55),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(80,100,70,0.12),transparent_45%)]" />
+
       <Link
         href="/agents"
-        className="absolute left-6 top-6 flex size-10 items-center justify-center rounded-full border border-black/10 bg-white/70 text-black/60 transition hover:bg-white hover:text-black"
+        className="absolute left-6 top-6 z-10 flex size-10 items-center justify-center rounded-full border border-black/10 bg-white/70 text-black/60 transition hover:bg-white hover:text-black"
         aria-label="Back to agents"
       >
         <ArrowLeft className="size-5" />
       </Link>
-      <div className="w-full max-w-lg space-y-6">
-        <Link
-          href="/agents"
-          className="block text-center font-pixel text-xs tracking-[0.25em] text-black/50"
-        >
-          SOLAR AI
-        </Link>
+
+      <div className="relative z-10 w-full max-w-lg space-y-5">
+        <div className="text-center">
+          <p className="font-pixel text-[10px] tracking-[0.28em] text-black/40">SOLAR AI</p>
+          <p className="mt-2 text-sm text-black/45">Dial 7856 · test call</p>
+        </div>
         <TestCallContent agentId={agentId} />
-        <p className="text-center text-xs text-black/35">
-          Make sure the API server and voice agent are running locally.
-        </p>
       </div>
     </div>
   );

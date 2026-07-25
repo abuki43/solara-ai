@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 
+import { PhoneTestCall } from "@/components/voice/phone-test-call";
 import { Skeleton } from "@/components/ui/skeleton";
-import { VoiceDemo } from "@/components/voice/voice-demo";
 import { trpc } from "@/lib/providers";
 
 export function TestCallContent({ agentId }: { agentId?: string }) {
@@ -24,15 +24,7 @@ export function TestCallContent({ agentId }: { agentId?: string }) {
   }
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="space-y-2 text-center">
-          <Skeleton className="mx-auto h-9 w-64" />
-          <Skeleton className="mx-auto h-5 w-72" />
-        </div>
-        <Skeleton className="h-96 rounded-[28px]" />
-      </div>
-    );
+    return <Skeleton className="mx-auto h-[680px] w-full max-w-[360px] rounded-[36px]" />;
   }
 
   if (error || !agent) {
@@ -46,20 +38,7 @@ export function TestCallContent({ agentId }: { agentId?: string }) {
     );
   }
 
-  const businessName = agent.businessName || "Your business";
+  const contactName = agent.businessName || agent.name;
 
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="font-display text-3xl font-light">Test {agent.name}</h1>
-        <p className="mt-2 text-sm text-black/45">
-          Browser test call for {businessName}. Changes to this receptionist are used immediately.
-        </p>
-      </div>
-      <VoiceDemo
-        agentId={agent.id}
-        receptionistName={`${businessName} · ${agent.name}`}
-      />
-    </div>
-  );
+  return <PhoneTestCall agentId={agent.id} contactName={contactName} />;
 }
