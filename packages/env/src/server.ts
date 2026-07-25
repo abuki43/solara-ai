@@ -17,6 +17,13 @@ export const env = createEnv({
     TELEGRAM_WEBHOOK_SECRET: z.string().min(32).optional(),
     UPLOAD_DIR: z.string().min(1).optional(),
     CARTESIA_API_KEY: z.string().min(1).optional(),
+    /** Addis AI key for Amharic STT/LLM/TTS. Required when ADDIS_AMHARIC_ENABLED=true. */
+    ADDIS_API_KEY: z.string().min(1).optional(),
+    /** Feature gate: allow Amharic calls + activation when true and ADDIS_API_KEY is set. */
+    ADDIS_AMHARIC_ENABLED: z
+      .enum(["true", "false"])
+      .optional()
+      .transform((value) => value === "true"),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   },
   runtimeEnv: process.env,

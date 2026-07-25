@@ -16,6 +16,7 @@
     "@solar-ai/db": "workspace:*",
     "@solar-ai/env": "workspace:*",
     "@trpc/server": "catalog:",
+    "addisai": "^0.2.0",
     "better-auth": "catalog:",
     "cors": "^2.8.6",
     "dotenv": "catalog:",

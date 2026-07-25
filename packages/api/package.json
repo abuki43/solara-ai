@@ -19,6 +19,7 @@
     "@solar-ai/env": "workspace:*",
     "@trpc/client": "^11.18.0",
     "@trpc/server": "catalog:",
+    "addisai": "^0.2.0",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.2",

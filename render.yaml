@@ -1,0 +1,69 @@
+services:
+  - type: web
+    name: solar-ai-api
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: npm install -g pnpm@11 && pnpm install && pnpm --filter server build
+    startCommand: node apps/server/dist/index.mjs
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: solar-ai-db
+          property: connectionString
+      - key: CORS_ORIGIN
+        sync: false
+      - key: BETTER_AUTH_URL
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      - key: INTERNAL_API_KEY
+        generateValue: true
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
+      - key: CARTESIA_API_KEY
+        sync: false
+
+  - type: worker
+    name: solar-ai-voice-agent
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: npm install -g pnpm@11 && pnpm install
+    startCommand: cd apps/voice-agent && pnpm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: INTERNAL_API_URL
+        fromService:
+          name: solar-ai-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: INTERNAL_API_KEY
+        fromService:
+          name: solar-ai-api
+          type: web
+          envVarKey: INTERNAL_API_KEY
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+
+databases:
+  - name: solar-ai-db
+    plan: starter
+    databaseName: solar_ai
+    ipAllowList: []
