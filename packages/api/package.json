@@ -23,12 +23,14 @@
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.2",
     "luxon": "^3.7.2",
+    "pdf-parse": "^2.4.5",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@solar-ai/config": "workspace:*",
     "@types/express": "catalog:",
     "@types/luxon": "^3.7.2",
+    "@types/pdf-parse": "^1.1.5",
     "typescript": "catalog:",
     "vitest": "^4.1.10"
   }

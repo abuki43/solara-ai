@@ -1,7 +1,11 @@
 import { buildAgentPrompt } from "@solar-ai/api/lib/agent-prompt";
+import { buildFileContext } from "@solar-ai/api/lib/file-context";
 import { sendTelegramMessage } from "@solar-ai/api/lib/telegram";
 import { db } from "@solar-ai/db";
 import { agents } from "@solar-ai/db/schema/agent";
+import { agentFiles } from "@solar-ai/db/schema/agent-file";
+import { callSessions } from "@solar-ai/db/schema/call-session";
+import { agentFaqs } from "@solar-ai/db/schema/faq";
 import { organizations } from "@solar-ai/db/schema/organization";
 import {
   agentTools,
@@ -9,7 +13,7 @@ import {
   telegramConnections,
 } from "@solar-ai/db/schema/telegram";
 import { env } from "@solar-ai/env/server";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { Router } from "express";
 import { z } from "zod";
 
@@ -33,18 +37,38 @@ internalAgentRouter.get("/agent/:id", async (req, res) => {
     return;
   }
 
-  const [[tools], [telegramConnection]] = await Promise.all([
+  const [[tools], [telegramConnection], faqs, files] = await Promise.all([
     db.select().from(agentTools).where(eq(agentTools.agentId, result.agent.id)).limit(1),
     db
       .select({ id: telegramConnections.id })
       .from(telegramConnections)
       .where(eq(telegramConnections.organizationId, result.organization.id))
       .limit(1),
+    db
+      .select({
+        question: agentFaqs.question,
+        answer: agentFaqs.answer,
+      })
+      .from(agentFaqs)
+      .where(eq(agentFaqs.agentId, result.agent.id))
+      .orderBy(asc(agentFaqs.sortOrder), asc(agentFaqs.createdAt)),
+    db
+      .select({
+        id: agentFiles.id,
+        createdAt: agentFiles.createdAt,
+        extractedText: agentFiles.extractedText,
+        parseStatus: agentFiles.parseStatus,
+      })
+      .from(agentFiles)
+      .where(eq(agentFiles.agentId, result.agent.id))
+      .orderBy(asc(agentFiles.createdAt)),
   ]);
   const telegramEnabled = Boolean(tools?.telegramEnabled && telegramConnection);
   const basePrompt = buildAgentPrompt({
     agent: result.agent,
     organization: result.organization,
+    faqs,
+    fileContext: buildFileContext(files),
   });
   const enabledTools: string[] = [];
   let prompt = basePrompt;
@@ -169,6 +193,11 @@ internalAgentRouter.post("/agent/:id/handoff", async (req, res) => {
         deliveredAt: new Date(),
       })
       .where(eq(handoffRequests.id, handoffId));
+
+    await db
+      .update(callSessions)
+      .set({ outcome: "handoff" })
+      .where(eq(callSessions.roomName, parsed.data.roomName));
 
     res.json({
       success: true,

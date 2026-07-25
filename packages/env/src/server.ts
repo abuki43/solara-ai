@@ -15,6 +15,8 @@ export const env = createEnv({
     INTERNAL_API_URL: z.url().default("http://localhost:3000"),
     TELEGRAM_BOT_TOKEN: z.string().min(20).optional(),
     TELEGRAM_WEBHOOK_SECRET: z.string().min(32).optional(),
+    UPLOAD_DIR: z.string().min(1).optional(),
+    CARTESIA_API_KEY: z.string().min(1).optional(),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   },
   runtimeEnv: process.env,

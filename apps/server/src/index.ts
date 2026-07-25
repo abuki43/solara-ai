@@ -6,10 +6,13 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express from "express";
+import { filesUploadRouter } from "./routes/files-upload.js";
 import { internalAgentRouter } from "./routes/internal-agent.js";
 import { internalBookingRouter } from "./routes/internal-booking.js";
+import { internalCallLogRouter } from "./routes/internal-call-log.js";
 import { livekitRouter } from "./routes/livekit.js";
 import { telegramWebhookRouter } from "./routes/telegram-webhook.js";
+import { voicePreviewRouter } from "./routes/voice-preview.js";
 
 const app = express();
 
@@ -43,8 +46,11 @@ app.use(express.json());
 
 app.all("/api/auth{/*path}", toNodeHandler(auth));
 app.use("/api/livekit", livekitRouter);
+app.use("/api/files/upload", filesUploadRouter);
+app.use("/api/voice", voicePreviewRouter);
 app.use("/api/internal", internalAgentRouter);
 app.use("/api/internal", internalBookingRouter);
+app.use("/api/internal", internalCallLogRouter);
 app.use("/api/integrations/telegram", telegramWebhookRouter);
 
 app.use(

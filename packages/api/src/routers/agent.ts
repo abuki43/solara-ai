@@ -45,8 +45,8 @@ const updateAgentSchema = createAgentSchema
     hours: businessHoursSchema.optional(),
     services: z.array(serviceSchema).max(20).optional(),
     tone: toneSchema.optional(),
-    aboutText: z.string().max(2000).nullable().optional(),
-    customInstructions: z.string().max(3000).nullable().optional(),
+    aboutText: z.string().max(4000).nullable().optional(),
+    customInstructions: z.string().max(2000).nullable().optional(),
   });
 
 async function assertUniqueSlug(slug: string, excludeId?: string) {

@@ -21,12 +21,15 @@ type DispatchMetadata = {
   callType: "test" | "public";
 };
 
+const DEFAULT_ENGLISH_VOICE_ID = "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc";
+
 type AgentConfig = {
   agent: {
     id: string;
     name: string;
     greeting: string | null;
     primaryLanguage: "en" | "am" | "om";
+    voiceConfig?: Record<string, string> | null;
   };
   organization: {
     name: string;
@@ -35,7 +38,12 @@ type AgentConfig = {
   enabledTools: string[];
 };
 
-function createSession() {
+function resolveEnglishVoiceId(voiceConfig?: Record<string, string> | null): string {
+  const configured = voiceConfig?.en?.trim();
+  return configured || DEFAULT_ENGLISH_VOICE_ID;
+}
+
+function createSession(voiceId = DEFAULT_ENGLISH_VOICE_ID) {
   return new voice.AgentSession({
     stt: new inference.STT({
       model: "deepgram/nova-3",
@@ -43,7 +51,7 @@ function createSession() {
     }),
     tts: new inference.TTS({
       model: "cartesia/sonic-3",
-      voice: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc",
+      voice: voiceId,
     }),
     turnHandling: {
       turnDetection: new inference.TurnDetector(),
@@ -293,7 +301,7 @@ export default defineAgent({
       return;
     }
 
-    const session = createSession();
+    const session = createSession(resolveEnglishVoiceId(config.agent.voiceConfig));
     const requestHandoff = config.enabledTools.includes("telegram_handoff")
       ? createHandoffHandler(config.agent.id, ctx.room.name ?? "unknown-room")
       : undefined;
@@ -328,7 +336,7 @@ export default defineAgent({
     await ctx.connect();
 
     session.generateReply({
-      instructions: `Deliver this configured company greeting naturally, without adding another introduction: ${config.agent.greeting ?? `Hello, you've reached ${config.organization.name}. I'm ${config.organization.name}'s AI customer support assistant. How can I help you today?`}`,
+      instructions: `Deliver this configured company greeting naturally, like a real customer support representative answering the phone, without adding another introduction: ${config.agent.greeting ?? `Thank you for calling ${config.organization.name}. You've reached our customer support. I'm an AI assistant here to help — how can I help you today?`}`,
     });
   },
 });

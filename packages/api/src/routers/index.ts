@@ -1,8 +1,12 @@
 import { protectedProcedure, publicProcedure, router } from "../index";
 import { agentRouter } from "./agent";
 import { bookingRouter } from "./booking";
+import { faqRouter } from "./faq";
+import { filesRouter } from "./files";
+import { knowledgeRouter } from "./knowledge";
 import { organizationRouter } from "./organization";
 import { telegramRouter } from "./telegram";
+import { voiceRouter } from "./voice";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -18,5 +22,9 @@ export const appRouter = router({
   agent: agentRouter,
   telegram: telegramRouter,
   booking: bookingRouter,
+  voice: voiceRouter,
+  knowledge: knowledgeRouter,
+  faq: faqRouter,
+  files: filesRouter,
 });
 export type AppRouter = typeof appRouter;
