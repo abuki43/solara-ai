@@ -12,10 +12,12 @@
     "@livekit/agents": "^1.5.0",
     "@livekit/rtc-node": "^0.13.31",
     "dotenv": "catalog:",
+    "luxon": "^3.7.1",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@solar-ai/config": "workspace:*",
+    "@types/luxon": "^3.7.1",
     "@types/node": "catalog:",
     "typescript": "catalog:"
   }

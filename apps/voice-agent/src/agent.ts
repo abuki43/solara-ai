@@ -75,8 +75,10 @@ export function createAgent(
               serviceName: z.string().min(1).describe("Service name from the business service list"),
               date: z
                 .string()
-                .regex(/^\d{4}-\d{2}-\d{2}$/)
-                .describe("Requested local date in YYYY-MM-DD format"),
+                .min(1)
+                .describe(
+                  "Requested local date. YYYY-MM-DD is preferred; today, tomorrow, weekday names, and phrases like July 28 are also accepted.",
+                ),
             }),
             execute: async (input) => checkAvailability(input),
           }),

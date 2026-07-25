@@ -14,6 +14,7 @@ import {
 } from "@solar-ai/db/schema/telegram";
 import { env } from "@solar-ai/env/server";
 import { and, asc, eq } from "drizzle-orm";
+import { DateTime } from "luxon";
 import { Router } from "express";
 import { z } from "zod";
 
@@ -87,11 +88,24 @@ Human follow-up:
 
   if (tools?.bookingEnabled) {
     enabledTools.push("booking");
+    const timezone = result.organization.timezone;
+    const today = DateTime.now().setZone(timezone);
+    const bookableServices = result.agent.services
+      .filter(
+        (service) =>
+          service.bookable &&
+          (!tools.bookingServiceIds?.length || tools.bookingServiceIds.includes(service.id)),
+      )
+      .map((service) => service.name);
     prompt += `
 
 Appointment booking:
+- Today's local date is ${today.toFormat("cccc, LLLL d, yyyy")} (${today.toISODate()}) in ${timezone}.
+- Bookable services (use these exact names when possible): ${bookableServices.length ? bookableServices.join(", ") : "none configured"}.
 - Use check_availability before offering appointment times. Never invent availability.
+- For check_availability, pass the service name and a date (YYYY-MM-DD, today, tomorrow, or a weekday name).
 - Offer only exact times returned by check_availability.
+- If no slots are returned, suggest another day and check again instead of saying availability cannot be checked.
 - Before booking, collect and repeat the service, time, caller name, and contact.
 - Ask for explicit permission to store those details for the appointment.
 - Call book_appointment only after the caller confirms every detail.
