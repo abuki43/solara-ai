@@ -11,6 +11,8 @@ export const env = createEnv({
     LIVEKIT_URL: z.string().min(1),
     LIVEKIT_API_KEY: z.string().min(1),
     LIVEKIT_API_SECRET: z.string().min(1),
+    INTERNAL_API_KEY: z.string().min(32),
+    INTERNAL_API_URL: z.url().default("http://localhost:3000"),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   },
   runtimeEnv: process.env,

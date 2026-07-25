@@ -1,15 +1,33 @@
 import { db } from "@solar-ai/db";
 import { agents } from "@solar-ai/db/schema/agent";
+import { organizations } from "@solar-ai/db/schema/organization";
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { slugify, USE_CASE_TEMPLATES } from "../lib/agent-templates";
 import { orgOwnerProcedure } from "../lib/org-procedure";
-import { router } from "../index";
+import { publicProcedure, router } from "../index";
 
 const languageSchema = z.enum(["en", "am", "om"]);
 const useCaseSchema = z.enum(["salon", "clinic", "restaurant", "general"]);
+const toneSchema = z.enum(["friendly", "professional", "casual"]);
+const businessHoursSchema = z.record(
+  z.string(),
+  z.object({
+    open: z.string().nullable(),
+    close: z.string().nullable(),
+    closed: z.boolean(),
+  }),
+);
+const serviceSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1).max(100),
+  price: z.number().nonnegative(),
+  currency: z.string().min(1).max(10),
+  durationMinutes: z.number().int().positive().max(1440),
+  bookable: z.boolean(),
+});
 
 const createAgentSchema = z.object({
   name: z.string().min(2).max(60),
@@ -24,15 +42,23 @@ const createAgentSchema = z.object({
   additionalLanguages: z.array(languageSchema).default([]),
 });
 
-const updateAgentSchema = createAgentSchema.partial().extend({
-  id: z.string().min(1),
-});
+const updateAgentSchema = createAgentSchema
+  .partial()
+  .extend({
+    id: z.string().min(1),
+    greeting: z.string().min(1).max(500).optional(),
+    hours: businessHoursSchema.optional(),
+    services: z.array(serviceSchema).max(50).optional(),
+    tone: toneSchema.optional(),
+    aboutText: z.string().max(2000).nullable().optional(),
+    customInstructions: z.string().max(3000).nullable().optional(),
+  });
 
-async function assertUniqueSlug(organizationId: string, slug: string, excludeId?: string) {
+async function assertUniqueSlug(slug: string, excludeId?: string) {
   const [existing] = await db
     .select({ id: agents.id })
     .from(agents)
-    .where(and(eq(agents.organizationId, organizationId), eq(agents.slug, slug)))
+    .where(eq(agents.slug, slug))
     .limit(1);
 
   if (existing && existing.id !== excludeId) {
@@ -69,7 +95,7 @@ export const agentRouter = router({
     }),
 
   create: orgOwnerProcedure.input(createAgentSchema).mutation(async ({ ctx, input }) => {
-    await assertUniqueSlug(ctx.organization.id, input.slug);
+    await assertUniqueSlug(input.slug);
 
     const additionalLanguages = input.additionalLanguages.filter(
       (lang) => lang !== input.primaryLanguage,
@@ -115,7 +141,7 @@ export const agentRouter = router({
     }
 
     if (updates.slug) {
-      await assertUniqueSlug(ctx.organization.id, updates.slug, id);
+      await assertUniqueSlug(updates.slug, id);
     }
 
     let additionalLanguages = updates.additionalLanguages;
@@ -151,6 +177,82 @@ export const agentRouter = router({
 
       await db.delete(agents).where(eq(agents.id, input.id));
       return { success: true };
+    }),
+
+  updateStatus: orgOwnerProcedure
+    .input(
+      z.object({
+        id: z.string().min(1),
+        status: z.enum(["active", "paused"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [existing] = await db
+        .select()
+        .from(agents)
+        .where(and(eq(agents.id, input.id), eq(agents.organizationId, ctx.organization.id)))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Agent not found" });
+      }
+
+      if (input.status === "active") {
+        if (!existing.greeting?.trim()) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Add a greeting before activating this receptionist",
+          });
+        }
+        if (!existing.services.length) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Add at least one service before activating this receptionist",
+          });
+        }
+        if (existing.primaryLanguage !== "en") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Only English calls are supported in this release",
+          });
+        }
+        await assertUniqueSlug(existing.slug, existing.id);
+      }
+
+      const [updated] = await db
+        .update(agents)
+        .set({ status: input.status })
+        .where(eq(agents.id, existing.id))
+        .returning();
+
+      return updated;
+    }),
+
+  getPublicBySlug: publicProcedure
+    .input(z.object({ slug: z.string().min(3).max(40) }))
+    .query(async ({ input }) => {
+      const [result] = await db
+        .select({
+          id: agents.id,
+          slug: agents.slug,
+          name: agents.name,
+          description: agents.description,
+          status: agents.status,
+          useCase: agents.useCase,
+          greeting: agents.greeting,
+          businessName: agents.businessName,
+          organizationName: organizations.name,
+        })
+        .from(agents)
+        .innerJoin(organizations, eq(agents.organizationId, organizations.id))
+        .where(eq(agents.slug, input.slug))
+        .limit(1);
+
+      if (!result) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Receptionist not found" });
+      }
+
+      return result;
     }),
 
   suggestSlug: orgOwnerProcedure
