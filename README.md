@@ -33,13 +33,24 @@ This project uses PostgreSQL with Drizzle ORM.
 pnpm run db:push
 ```
 
+4. (Optional) Seed the Bella Salon demo:
+
+```bash
+pnpm run db:seed
+```
+
+- Email: `demo@bellasalon.com`
+- Password: `BellaDemo2026!`
+- Public call: [http://localhost:3001/call/bella-receptionist-en](http://localhost:3001/call/bella-receptionist-en)
+- Embed smoke page: [http://localhost:3001/embed-demo.html](http://localhost:3001/embed-demo.html)
+
 Then, run the development server:
 
 ```bash
 pnpm run dev
 ```
 
-The API is running at [http://localhost:3000](http://localhost:3000).
+The API is running at [http://localhost:3000](http://localhost:3000). The web app is at [http://localhost:3001](http://localhost:3001).
 
 ## Deployment
 
@@ -78,6 +89,7 @@ solar-ai/
 - `pnpm run db:generate`: Generate database client/types
 - `pnpm run db:migrate`: Run database migrations
 - `pnpm run db:studio`: Open database studio UI
+- `pnpm run db:seed`: Seed Bella Salon demo user, agent, FAQs, and booking slots
 - `pnpm run docker:build`: Build the Docker Compose images
 - `pnpm run docker:up`: Build and start the Docker Compose stack
 - `pnpm run docker:logs`: Tail logs from the Docker Compose stack

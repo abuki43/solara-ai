@@ -17,6 +17,7 @@
     "db:studio": "pnpm --filter @solar-ai/db db:studio",
     "db:generate": "pnpm --filter @solar-ai/db db:generate",
     "db:migrate": "pnpm --filter @solar-ai/db db:migrate",
+    "db:seed": "pnpm --filter @solar-ai/db db:seed",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down",

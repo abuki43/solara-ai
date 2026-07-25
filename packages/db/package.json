@@ -13,18 +13,23 @@
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx --env-file=../../apps/server/.env src/seed.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
     "@solar-ai/env": "workspace:*",
+    "better-auth": "catalog:",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.2",
+    "luxon": "^3.7.2",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@solar-ai/config": "workspace:*",
+    "@types/luxon": "^3.7.2",
     "drizzle-kit": "^0.31.10",
+    "tsx": "^4.22.5",
     "typescript": "catalog:"
   }
 }
