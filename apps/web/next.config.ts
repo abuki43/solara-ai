@@ -4,6 +4,14 @@ const serverUrl = process.env.SERVER_URL ?? "http://localhost:3000";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  async headers() {
+    return [
+      {
+        source: "/embed/:path*",
+        headers: [{ key: "Content-Security-Policy", value: "frame-ancestors *" }],
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

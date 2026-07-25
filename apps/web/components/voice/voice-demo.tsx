@@ -13,7 +13,8 @@ import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? "";
+/** Prefer same-origin Next rewrites so embed iframes avoid cross-origin CORS issues. */
+const SERVER_URL = "";
 
 type TokenResponse = {
   token: string;
@@ -101,18 +102,24 @@ function ActiveCall({
 
 type VoiceDemoProps = {
   compact?: boolean;
+  embed?: boolean;
   className?: string;
   agentId?: string;
   agentSlug?: string;
   receptionistName?: string;
+  buttonLabel?: string;
+  accentColor?: string;
 };
 
 export function VoiceDemo({
   compact = false,
+  embed = false,
   className,
   agentId,
   agentSlug,
   receptionistName = "AI Receptionist",
+  buttonLabel = "Start Call",
+  accentColor = "#7cf0ff",
 }: VoiceDemoProps) {
   const [session, setSession] = useState<TokenResponse | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -161,6 +168,37 @@ export function VoiceDemo({
     }
     setSession(null);
   }, [session]);
+
+  if (embed) {
+    return (
+      <div
+        className={cn(
+          "flex flex-col items-center justify-center gap-3 rounded-2xl border bg-white p-4",
+          className,
+        )}
+        style={{ borderColor: `${accentColor}66` }}
+      >
+        {!session ? (
+          <>
+            <p className="text-sm font-medium text-[#111]">{receptionistName}</p>
+            <Button
+              type="button"
+              onClick={startCall}
+              disabled={isConnecting}
+              className="h-11 min-w-44 gap-2 text-black"
+              style={{ backgroundColor: accentColor }}
+            >
+              <Mic className="size-4" />
+              {isConnecting ? "Connecting..." : buttonLabel}
+            </Button>
+            {error ? <p className="text-center text-xs text-red-600">{error}</p> : null}
+          </>
+        ) : (
+          <ActiveCall session={session} onDisconnect={endCall} compact />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -230,7 +268,7 @@ export function VoiceDemo({
             className="voice-demo-call-button h-12 min-w-52 gap-2 overflow-hidden rounded-xl bg-[#111] px-8 text-white shadow-[0_10px_25px_rgba(17,17,17,0.2)] transition-all hover:-translate-y-0.5 hover:bg-[#252525] hover:shadow-[0_14px_30px_rgba(17,17,17,0.25)]"
           >
             <Mic className="size-4" />
-            {isConnecting ? "Connecting..." : "Start voice call"}
+            {isConnecting ? "Connecting..." : buttonLabel || "Start voice call"}
           </Button>
           <p className="text-[10px] tracking-wide text-black/30">Uses your microphone · No phone number required</p>
           {error ? (

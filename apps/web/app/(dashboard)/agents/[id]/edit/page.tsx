@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AgentWizard } from "@/components/agents/agent-wizard";
+import { WidgetSettingsCard } from "@/components/agents/widget-settings-card";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,7 @@ export default async function EditAgentPage({
     <DashboardShell title="Edit agent" description="Update agent setup">
       <div className="space-y-6">
         <AgentWizard mode="edit" agentId={id} />
+        <WidgetSettingsCard agentId={id} />
         <Card className="max-w-3xl">
           <CardHeader>
             <CardTitle>Call configuration moved</CardTitle>

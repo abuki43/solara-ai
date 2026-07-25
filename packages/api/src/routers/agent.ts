@@ -47,6 +47,11 @@ const updateAgentSchema = createAgentSchema
     tone: toneSchema.optional(),
     aboutText: z.string().max(4000).nullable().optional(),
     customInstructions: z.string().max(2000).nullable().optional(),
+    widgetButtonLabel: z.string().min(1).max(40).optional(),
+    widgetAccentColor: z
+      .string()
+      .regex(/^#([0-9a-fA-F]{6})$/, "Use a hex color like #7cf0ff")
+      .optional(),
   });
 
 async function assertUniqueSlug(slug: string, excludeId?: string) {
@@ -249,6 +254,8 @@ export const agentRouter = router({
           useCase: agents.useCase,
           greeting: agents.greeting,
           businessName: agents.businessName,
+          widgetButtonLabel: agents.widgetButtonLabel,
+          widgetAccentColor: agents.widgetAccentColor,
           organizationName: organizations.name,
         })
         .from(agents)

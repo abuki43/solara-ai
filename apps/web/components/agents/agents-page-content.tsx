@@ -59,6 +59,33 @@ function CopySlugButton({ slug, disabled }: { slug: string; disabled: boolean })
   );
 }
 
+function CopyEmbedButton({ slug, disabled }: { slug: string; disabled: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const snippet = `<iframe src="${origin}/embed/${slug}" width="400" height="120" style="border:0;border-radius:16px;" allow="microphone" title="Solar AI call widget"></iframe>`;
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(snippet);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="gap-1.5"
+      onClick={handleCopy}
+      disabled={disabled}
+      title={disabled ? "Activate this receptionist before copying the embed snippet" : undefined}
+    >
+      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+      {copied ? "Copied" : "Copy embed"}
+    </Button>
+  );
+}
+
 export function AgentsPageContent() {
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -215,6 +242,7 @@ export function AgentsPageContent() {
                   {agent.status === "active" ? "Pause" : "Activate"}
                 </Button>
                 <CopySlugButton slug={agent.slug} disabled={agent.status !== "active"} />
+                <CopyEmbedButton slug={agent.slug} disabled={agent.status !== "active"} />
                 <Button
                   type="button"
                   variant="destructive"
