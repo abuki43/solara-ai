@@ -2,7 +2,10 @@ packages:
   - apps/*
   - packages/*
 allowBuilds:
+  "@livekit/local-inference": true
   esbuild: true
+  protobufjs: true
+  sharp: false
 catalog:
   dotenv: ^17.4.2
   zod: ^4.4.3

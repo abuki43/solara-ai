@@ -13,7 +13,18 @@ apps/web/src/routeTree.gen.ts
 
 # Environment variables
 .env
-.env*.local
+.env.*
+.env.local
+.env.*.local
+**/.env
+**/.env.*
+**/.env.local
+**/.env.*.local
+!.env.example
+!**/.env.example
+
+# Next.js
+.next
 
 # IDEs and editors
 .vscode/*
