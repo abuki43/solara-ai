@@ -1,0 +1,11 @@
+{
+  "extends": "@solar-ai/config/tsconfig.base.json",
+  "include": ["./src/**/*"],
+  "exclude": ["./node_modules"],
+  "compilerOptions": {
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "allowImportingTsExtensions": true
+  }
+}

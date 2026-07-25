@@ -1,0 +1,21 @@
+{
+  "name": "voice-agent",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node src/main.ts dev",
+    "start": "node src/main.ts start",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@livekit/agents": "^1.5.0",
+    "@livekit/rtc-node": "^0.13.31",
+    "dotenv": "catalog:"
+  },
+  "devDependencies": {
+    "@solar-ai/config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}
