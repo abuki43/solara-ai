@@ -1,13 +1,10 @@
-import { AgentRequiredPlaceholder } from "@/components/dashboard/placeholder-page";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { TelegramToolCard } from "@/components/tools/telegram-tool-card";
 
 export default function ToolsPage() {
   return (
     <DashboardShell title="Tools" description="Agent capabilities">
-      <AgentRequiredPlaceholder
-        title="Tools"
-        description="Configure tools and integrations for the selected agent."
-      />
+      <TelegramToolCard />
     </DashboardShell>
   );
 }

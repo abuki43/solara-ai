@@ -105,6 +105,13 @@ check(
   "default greeting uses the company-branded customer support identity",
 );
 
+const telegramLinkBody = await mutate("telegram.createConnectLink", { agentId: agent.id });
+const telegramLink = trpcResult(telegramLinkBody);
+check(
+  telegramLink.url.startsWith("https://t.me/solara_support_ai_bot?start="),
+  "Telegram produces a secure one-time connection link",
+);
+
 await mutate("agent.update", {
   id: agent.id,
   greeting:

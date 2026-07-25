@@ -1,6 +1,7 @@
 import { protectedProcedure, publicProcedure, router } from "../index";
 import { agentRouter } from "./agent";
 import { organizationRouter } from "./organization";
+import { telegramRouter } from "./telegram";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -14,5 +15,6 @@ export const appRouter = router({
   }),
   organization: organizationRouter,
   agent: agentRouter,
+  telegram: telegramRouter,
 });
 export type AppRouter = typeof appRouter;

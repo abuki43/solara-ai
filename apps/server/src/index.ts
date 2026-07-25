@@ -8,6 +8,7 @@ import cors from "cors";
 import express from "express";
 import { internalAgentRouter } from "./routes/internal-agent.js";
 import { livekitRouter } from "./routes/livekit.js";
+import { telegramWebhookRouter } from "./routes/telegram-webhook.js";
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use(express.json());
 app.all("/api/auth{/*path}", toNodeHandler(auth));
 app.use("/api/livekit", livekitRouter);
 app.use("/api/internal", internalAgentRouter);
+app.use("/api/integrations/telegram", telegramWebhookRouter);
 
 app.use(
   "/trpc",
