@@ -23,12 +23,14 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.0",
     "livekit-server-sdk": "^2.15.0",
+    "luxon": "^3.7.2",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@solar-ai/config": "workspace:*",
     "@types/cors": "^2.8.19",
     "@types/express": "catalog:",
+    "@types/luxon": "^3.7.2",
     "@types/node": "catalog:",
     "tsdown": "^0.22.3",
     "tsx": "^4.22.5",

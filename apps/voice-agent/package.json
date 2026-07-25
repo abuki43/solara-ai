@@ -11,7 +11,8 @@
   "dependencies": {
     "@livekit/agents": "^1.5.0",
     "@livekit/rtc-node": "^0.13.31",
-    "dotenv": "catalog:"
+    "dotenv": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@solar-ai/config": "workspace:*",

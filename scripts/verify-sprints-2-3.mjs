@@ -49,6 +49,19 @@ async function request(path, options = {}, expected = 200) {
   return body;
 }
 
+async function requestWithStatus(path, options = {}) {
+  const response = await fetch(`${apiBase}${path}`, {
+    ...options,
+    headers: {
+      Origin: webBase,
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(cookie ? { Cookie: cookie } : {}),
+      ...options.headers,
+    },
+  });
+  return { status: response.status, body: await response.json() };
+}
+
 function trpcResult(body) {
   return body?.result?.data?.json ?? body?.result?.data;
 }
@@ -133,6 +146,91 @@ await mutate("agent.update", {
 });
 
 await mutate("agent.updateStatus", { id: agent.id, status: "active" });
+await mutate("booking.updateConfig", {
+  agentId: agent.id,
+  serviceIds: ["haircut"],
+  leadMinutes: 0,
+  windowDays: 14,
+  bufferMinutes: 0,
+});
+await mutate("booking.regenerate", { agentId: agent.id });
+await mutate("booking.setEnabled", { agentId: agent.id, enabled: true });
+const nextMonday = new Date();
+do {
+  nextMonday.setUTCDate(nextMonday.getUTCDate() + 1);
+} while (nextMonday.getUTCDay() !== 1);
+const bookingDate = nextMonday.toISOString().slice(0, 10);
+const availability = await request(
+  `/api/internal/agent/${agent.id}/availability?serviceName=Haircut&date=${bookingDate}`,
+  { headers: { "X-Internal-Key": process.env.INTERNAL_API_KEY } },
+);
+check(availability.slots.length > 0, "booking tool returns real available slots");
+const bookingInput = {
+  roomName: "acceptance-booking",
+  serviceName: "Haircut",
+  startTime: availability.slots[0].startTime,
+  callerName: "Booking Test",
+  callerContact: "0911000000",
+  consentGiven: true,
+};
+const concurrentBookings = await Promise.all([
+  requestWithStatus(`/api/internal/agent/${agent.id}/booking`, {
+    method: "POST",
+    headers: { "X-Internal-Key": process.env.INTERNAL_API_KEY },
+    body: JSON.stringify(bookingInput),
+  }),
+  requestWithStatus(`/api/internal/agent/${agent.id}/booking`, {
+    method: "POST",
+    headers: { "X-Internal-Key": process.env.INTERNAL_API_KEY },
+    body: JSON.stringify({ ...bookingInput, callerName: "Competing Booking" }),
+  }),
+]);
+check(
+  concurrentBookings.map((result) => result.status).sort().join(",") === "200,409",
+  "parallel requests cannot both claim overlapping occupancy",
+);
+const confirmedBooking = concurrentBookings.find((result) => result.status === 200).body;
+check(Boolean(confirmedBooking.bookingId), "booking tool confirms an atomic booking");
+check(Boolean(confirmedBooking.confirmationCode), "booking returns a caller confirmation code");
+
+const lookup = await request(`/api/internal/agent/${agent.id}/booking/lookup`, {
+  method: "POST",
+  headers: { "X-Internal-Key": process.env.INTERNAL_API_KEY },
+  body: JSON.stringify({
+    confirmationCode: confirmedBooking.confirmationCode,
+    callerContact: bookingInput.callerContact,
+  }),
+});
+check(lookup.status === "confirmed", "verified voice lookup finds a confirmed booking");
+const originalEnd = new Date(availability.slots[0].endTime).getTime();
+const alternative = availability.slots.find(
+  (slot) => new Date(slot.startTime).getTime() >= originalEnd,
+);
+check(Boolean(alternative), "availability returns a non-overlapping reschedule alternative");
+const rescheduled = await request(`/api/internal/agent/${agent.id}/booking/reschedule`, {
+  method: "POST",
+  headers: { "X-Internal-Key": process.env.INTERNAL_API_KEY },
+  body: JSON.stringify({
+    confirmationCode: confirmedBooking.confirmationCode,
+    callerContact: bookingInput.callerContact,
+    startTime: alternative.startTime,
+    roomName: "acceptance-reschedule",
+    confirmed: true,
+  }),
+});
+check(Boolean(rescheduled.confirmationCode), "verified voice reschedule returns a new code");
+await request(`/api/internal/agent/${agent.id}/booking/cancel`, {
+  method: "POST",
+  headers: { "X-Internal-Key": process.env.INTERNAL_API_KEY },
+  body: JSON.stringify({
+    confirmationCode: rescheduled.confirmationCode,
+    callerContact: bookingInput.callerContact,
+    reason: "Acceptance lifecycle check",
+    roomName: "acceptance-cancel",
+    confirmed: true,
+  }),
+});
+console.log("✓ verified booking lookup, reschedule, and cancellation lifecycle");
 
 const testToken = await request("/api/livekit/token", {
   method: "POST",

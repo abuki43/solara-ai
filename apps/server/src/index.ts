@@ -7,6 +7,7 @@ import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express from "express";
 import { internalAgentRouter } from "./routes/internal-agent.js";
+import { internalBookingRouter } from "./routes/internal-booking.js";
 import { livekitRouter } from "./routes/livekit.js";
 import { telegramWebhookRouter } from "./routes/telegram-webhook.js";
 
@@ -43,6 +44,7 @@ app.use(express.json());
 app.all("/api/auth{/*path}", toNodeHandler(auth));
 app.use("/api/livekit", livekitRouter);
 app.use("/api/internal", internalAgentRouter);
+app.use("/api/internal", internalBookingRouter);
 app.use("/api/integrations/telegram", telegramWebhookRouter);
 
 app.use(
