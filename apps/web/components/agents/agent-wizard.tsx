@@ -7,13 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/providers";
@@ -27,12 +20,6 @@ const useCases: { value: UseCase; label: string; description: string }[] = [
   { value: "clinic", label: "Clinic", description: "Medical appointments and inquiries" },
   { value: "restaurant", label: "Restaurant", description: "Reservations and menu questions" },
   { value: "general", label: "General", description: "Any local business" },
-];
-
-const languages: { value: Language; label: string }[] = [
-  { value: "en", label: "English" },
-  { value: "am", label: "Amharic" },
-  { value: "om", label: "Afan Oromo" },
 ];
 
 function slugify(value: string) {
@@ -101,15 +88,6 @@ export function AgentWizard({ mode, agentId }: AgentWizardProps) {
       setSlug(slugify(name));
     }
   }, [name, slugTouched]);
-
-  function toggleAdditionalLanguage(language: Language) {
-    if (language === primaryLanguage) return;
-    setAdditionalLanguages((current) =>
-      current.includes(language)
-        ? current.filter((item) => item !== language)
-        : [...current, language],
-    );
-  }
 
   async function handleSubmit() {
     setError(null);
@@ -219,49 +197,32 @@ export function AgentWizard({ mode, agentId }: AgentWizardProps) {
 
         {step === 2 ? (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="primary-language">Primary language</Label>
-              <Select
-                value={primaryLanguage}
-                onValueChange={(value) => {
-                  const lang = value as Language;
-                  setPrimaryLanguage(lang);
-                  setAdditionalLanguages((current) => current.filter((l) => l !== lang));
-                }}
-              >
-                <SelectTrigger id="primary-language">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {languages.map((language) => (
-                    <SelectItem key={language.value} value={language.value}>
-                      {language.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Additional languages (optional)</Label>
-              <div className="flex flex-wrap gap-3">
-                {languages
-                  .filter((language) => language.value !== primaryLanguage)
-                  .map((language) => (
-                    <label key={language.value} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={additionalLanguages.includes(language.value)}
-                        onChange={() => toggleAdditionalLanguage(language.value)}
-                        className="rounded border-input"
-                      />
-                      {language.label}
-                    </label>
-                  ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Voice selection happens in the Voice menu after setup.
+            <div className="rounded-lg border border-primary bg-primary/5 p-4">
+              <p className="text-sm font-medium">English</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                English is the supported call language for this release.
               </p>
             </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {["Amharic", "Afan Oromo"].map((language) => (
+                <div key={language} className="rounded-lg border border-dashed p-4 opacity-60">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium">{language}</p>
+                    <span className="rounded-full bg-muted px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Coming soon
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Available after speech quality and latency validation.
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-lg bg-muted/50 p-3">
+              <p className="text-xs text-muted-foreground">
+                We only expose languages that are ready for reliable customer calls.
+              </p>
+              </div>
           </div>
         ) : null}
 

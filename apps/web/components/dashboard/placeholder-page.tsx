@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { useSelectedAgentId } from "@/components/dashboard/agent-selector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -35,6 +36,12 @@ export function AgentRequiredPlaceholder({
   title: string;
   description: string;
 }) {
+  const selectedAgentId = useSelectedAgentId();
+
+  if (selectedAgentId) {
+    return <PlaceholderPage title={title} description={description} />;
+  }
+
   return (
     <Card className="border-dashed">
       <CardHeader>

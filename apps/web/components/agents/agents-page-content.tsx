@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Copy, Pencil, Phone, Trash2 } from "lucide-react";
+import {
+  Check,
+  CheckCircle2,
+  Circle,
+  Copy,
+  Pause,
+  Pencil,
+  Phone,
+  Play,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +33,7 @@ const statusVariant = {
   paused: "outline" as const,
 };
 
-function CopySlugButton({ slug }: { slug: string }) {
+function CopySlugButton({ slug, disabled }: { slug: string; disabled: boolean }) {
   const [copied, setCopied] = useState(false);
   const url = typeof window !== "undefined" ? `${window.location.origin}/call/${slug}` : `/call/${slug}`;
 
@@ -34,7 +44,15 @@ function CopySlugButton({ slug }: { slug: string }) {
   }
 
   return (
-    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={handleCopy}>
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="gap-1.5"
+      onClick={handleCopy}
+      disabled={disabled}
+      title={disabled ? "Activate this receptionist before sharing its public link" : undefined}
+    >
       {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
       {copied ? "Copied" : "Copy URL"}
     </Button>
@@ -49,10 +67,23 @@ export function AgentsPageContent() {
   const deleteMutation = trpc.agent.delete.useMutation({
     onSuccess: () => utils.agent.list.invalidate(),
   });
+  const statusMutation = trpc.agent.updateStatus.useMutation({
+    onSuccess: () => utils.agent.list.invalidate(),
+  });
+  const [actionError, setActionError] = useState<string | null>(null);
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Delete agent "${name}"? This cannot be undone.`)) return;
     await deleteMutation.mutateAsync({ id });
+  }
+
+  async function handleStatus(id: string, status: "active" | "paused") {
+    setActionError(null);
+    try {
+      await statusMutation.mutateAsync({ id, status });
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Could not update receptionist");
+    }
   }
 
   if (isLoading) {
@@ -96,6 +127,45 @@ export function AgentsPageContent() {
         </Button>
       </div>
 
+      <Card className="bg-muted/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Receptionist setup</CardTitle>
+          <CardDescription>
+            Browser calling is available in this phase. Connecting a business phone number comes later.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {[
+            { label: "Create receptionist", done: true, href: "/agents" },
+            { label: "Review business details", done: false, href: "/settings" },
+            {
+              label: "Activate",
+              done: agents.some((agent) => agent.status === "active"),
+              href: "/agents",
+            },
+            { label: "Test a call", done: false, href: "/agents" },
+            {
+              label: "Share browser call link",
+              done: agents.some((agent) => agent.status === "active"),
+              href: "/agents",
+            },
+          ].map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className="flex items-center gap-2 rounded-lg border bg-background px-3 py-2.5 text-xs transition-colors hover:bg-muted/50"
+            >
+              {item.done ? (
+                <CheckCircle2 className="size-4 text-emerald-600" />
+              ) : (
+                <Circle className="size-4 text-muted-foreground" />
+              )}
+              {item.label}
+            </Link>
+          ))}
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {agents.map((agent) => (
           <Card key={agent.id}>
@@ -122,12 +192,29 @@ export function AgentsPageContent() {
                   Edit
                 </Button>
                 <Button type="button" variant="outline" size="sm" className="gap-1.5" asChild>
-                  <Link href="/test-call">
+                  <Link href={`/test-call?agentId=${agent.id}`}>
                     <Phone className="size-3.5" />
                     Test call
                   </Link>
                 </Button>
-                <CopySlugButton slug={agent.slug} />
+                <Button
+                  type="button"
+                  variant={agent.status === "active" ? "outline" : "default"}
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={statusMutation.isPending}
+                  onClick={() =>
+                    handleStatus(agent.id, agent.status === "active" ? "paused" : "active")
+                  }
+                >
+                  {agent.status === "active" ? (
+                    <Pause className="size-3.5" />
+                  ) : (
+                    <Play className="size-3.5" />
+                  )}
+                  {agent.status === "active" ? "Pause" : "Activate"}
+                </Button>
+                <CopySlugButton slug={agent.slug} disabled={agent.status !== "active"} />
                 <Button
                   type="button"
                   variant="destructive"
@@ -143,6 +230,11 @@ export function AgentsPageContent() {
           </Card>
         ))}
       </div>
+      {actionError ? (
+        <p role="alert" className="text-sm text-destructive">
+          {actionError}
+        </p>
+      ) : null}
     </div>
   );
 }

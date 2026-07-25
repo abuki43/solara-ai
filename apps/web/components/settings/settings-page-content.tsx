@@ -14,9 +14,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { signOut, useSession } from "@/lib/auth-client";
 import { trpc } from "@/lib/providers";
 
 export function SettingsPageContent() {
+  const { data: session } = useSession();
   const utils = trpc.useUtils();
   const { data: organization, isLoading } = trpc.organization.get.useQuery();
   const updateMutation = trpc.organization.update.useMutation({
@@ -58,20 +60,26 @@ export function SettingsPageContent() {
   }
 
   return (
-    <Card className="max-w-2xl">
-      <CardHeader>
-        <CardTitle>Business profile</CardTitle>
-        <CardDescription>Update your organization details used by all agents.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form className="space-y-4" onSubmit={handleSubmit}>
+    <div className="max-w-2xl space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Business profile</CardTitle>
+          <CardDescription>Update your organization details used by all agents.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="name">Business name</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone">Phone</Label>
-            <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Input
+              id="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="09xx xxx xxx"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="website">Website</Label>
@@ -104,8 +112,25 @@ export function SettingsPageContent() {
             </Button>
             {saved ? <span className="text-sm text-emerald-600">Settings saved.</span> : null}
           </div>
-        </form>
-      </CardContent>
-    </Card>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Account</CardTitle>
+          <CardDescription>Your sign-in details and session.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Email</p>
+            <p className="mt-1 text-sm">{session?.user.email ?? "—"}</p>
+          </div>
+          <Button type="button" variant="outline" onClick={() => signOut()}>
+            Log out
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
