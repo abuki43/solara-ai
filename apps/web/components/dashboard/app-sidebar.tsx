@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   IconBook,
   IconCalendarCheck,
+  IconCreditCard,
   IconFile,
   IconMicrophone,
   IconPhone,
@@ -34,6 +35,7 @@ const navItems = [
   { href: "/tools", label: "Tools", icon: IconTool },
   { href: "/bookings", label: "Bookings", icon: IconCalendarCheck },
   { href: "/calls", label: "Calls", icon: IconPhone },
+  { href: "/billing", label: "Billing", icon: IconCreditCard },
   { href: "/settings", label: "Settings", icon: IconSettings },
 ];
 
@@ -50,7 +52,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
                   <IconRobot className="size-4" />
                 </div>
-                <span className="text-base font-semibold">Solar AI</span>
+                <span className="text-base font-semibold">Solara AI</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
