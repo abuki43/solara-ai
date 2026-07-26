@@ -30,7 +30,7 @@ export function LandingNav() {
           style={NAV_STYLE}
         >
           <Link href="/" className="font-pixel text-xs tracking-[0.25em] text-black/70">
-            SOLAR AI
+            SOLARA AI
           </Link>
 
           <div className="hidden items-center gap-7 md:flex">

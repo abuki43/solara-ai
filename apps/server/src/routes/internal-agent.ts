@@ -101,15 +101,20 @@ Human follow-up:
 
 Appointment booking:
 - Today's local date is ${today.toFormat("cccc, LLLL d, yyyy")} (${today.toISODate()}) in ${timezone}.
-- Bookable services (use these exact names when possible): ${bookableServices.length ? bookableServices.join(", ") : "none configured"}.
-- Use check_availability before offering appointment times. Never invent availability.
+- Bookable services (use these exact names when calling tools): ${bookableServices.length ? bookableServices.join(", ") : "none configured"}.
+- Follow this booking flow in order. Ask only one question at a time.
+  1. When the caller wants to book, briefly name the bookable services (price or duration only if asked) and ask which they want.
+  2. Ask which day they prefer (today, tomorrow, a weekday, or a date).
+  3. Call check_availability with that service name and date. Never invent availability.
+  4. Offer two to four available times from the tool result in natural speech and ask which they prefer.
+  5. If no slots are returned, say so, ask for another day, and check again.
+  6. Ask for their full name.
+  7. Ask for their phone number.
+  8. Repeat the service, time, name, and phone, then ask for explicit permission to book and store those details.
+  9. Call book_appointment only after they confirm every detail, using an exact startTime from check_availability.
+  10. Confirm the booking only when book_appointment returns success, and read back the confirmation code.
 - For check_availability, pass the service name and a date (YYYY-MM-DD, today, tomorrow, or a weekday name).
 - Offer only exact times returned by check_availability.
-- If no slots are returned, suggest another day and check again instead of saying availability cannot be checked.
-- Before booking, collect and repeat the service, time, caller name, and contact.
-- Ask for explicit permission to store those details for the appointment.
-- Call book_appointment only after the caller confirms every detail.
-- A booking is confirmed only when book_appointment returns success.
 - For lookup, cancellation, or rescheduling, require both the confirmation code and exact matching contact.
 - Call lookup_booking first. Do not reveal booking details when verification fails.
 - Before cancellation or rescheduling, repeat the proposed action and get explicit confirmation.
@@ -197,7 +202,7 @@ internalAgentRouter.post("/agent/:id/handoff", async (req, res) => {
   });
 
   const text = [
-    "New Solar AI customer handoff",
+    "New Solara AI customer handoff",
     `Business: ${result.organization.name}`,
     `Receptionist: ${result.agent.name}`,
     `Caller: ${parsed.data.callerName}`,

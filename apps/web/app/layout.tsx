@@ -29,7 +29,7 @@ const courierPrime = Courier_Prime({
 });
 
 export const metadata: Metadata = {
-  title: "Solar AI — Voice Receptionist",
+  title: "Solara AI — Voice Receptionist",
   description: "AI phone receptionist for Ethiopian SMBs",
 };
 

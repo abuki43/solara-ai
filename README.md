@@ -20,6 +20,12 @@ AI voice receptionist for Ethiopian SMBs. Answer customer calls in Amharic, Afan
 
 ![Tools — booking and Telegram handoff](docs/screenshots/tools.png)
 
+![Bookings and appointments](docs/screenshots/bookings.png)
+
+### Telegram notifications
+
+![Telegram handoffs and booking confirmations](docs/screenshots/telegram-handoffs.png)
+
 ### Authentication
 
 ![Sign in](docs/screenshots/sign-in.png)

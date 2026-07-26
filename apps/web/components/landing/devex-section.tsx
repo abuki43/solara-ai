@@ -17,7 +17,7 @@ const STEPS: {
     file: "embed.html",
     lang: "html",
     code: [
-      { type: "comment", text: "<!-- Embed Solar AI on any website -->" },
+      { type: "comment", text: "<!-- Embed Solara AI on any website -->" },
       { type: "plain", text: '<iframe' },
       { type: "prop", key: "  src", val: "'https://solar-ai.app/call/bella-salon'" },
       { type: "prop", key: "  width", val: "'400'" },

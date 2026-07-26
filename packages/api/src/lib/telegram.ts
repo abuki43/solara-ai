@@ -96,7 +96,7 @@ export async function processTelegramUpdate(update: TelegramUpdate): Promise<boo
   if (!connectToken) {
     await sendTelegramMessage(
       String(message.chat.id),
-      "This Solar AI connection link is invalid or expired. Please create a new link from the Tools page.",
+      "This Solara AI connection link is invalid or expired. Please create a new link from the Tools page.",
     );
     return false;
   }
@@ -149,7 +149,7 @@ export async function processTelegramUpdate(update: TelegramUpdate): Promise<boo
 
   await sendTelegramMessage(
     String(message.chat.id),
-    `Connected to Solar AI successfully. Customer handoffs for the selected receptionist can now be delivered here.`,
+    `Connected to Solara AI successfully. Customer handoffs for the selected receptionist can now be delivered here.`,
   );
   return true;
 }

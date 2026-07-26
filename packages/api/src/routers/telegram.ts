@@ -148,7 +148,7 @@ export const telegramRouter = router({
 
       const message = await sendTelegramMessage(
         connection.chatId,
-        `Solar AI test successful. Customer handoffs for ${agent.name} can be delivered to this chat.`,
+        `Solara AI test successful. Customer handoffs for ${agent.name} can be delivered to this chat.`,
       );
       return { success: true, messageId: message.message_id };
     }),

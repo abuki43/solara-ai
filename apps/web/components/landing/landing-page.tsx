@@ -153,7 +153,7 @@ export default function LandingPage() {
                   transition: "opacity 0.8s cubic-bezier(0.16,1,0.3,1) 200ms, filter 0.8s cubic-bezier(0.16,1,0.3,1) 200ms, transform 0.8s cubic-bezier(0.16,1,0.3,1) 200ms",
                 }}
               >
-                Solar AI gives Ethiopian SMBs an AI phone receptionist that answers in local languages,
+                Solara AI gives Ethiopian SMBs an AI phone receptionist that answers in local languages,
                 knows your business, and works around the clock.
               </p>
               <div className="mt-10 flex flex-wrap gap-3"
@@ -350,7 +350,7 @@ export default function LandingPage() {
             <div className="relative w-full h-[320px] md:h-[480px] shrink-0">
               <Image
                 src="/images/solar-integrations.png"
-                alt="Iridescent connected shapes representing Solar AI integrations"
+                alt="Iridescent connected shapes representing Solara AI integrations"
                 fill
                 sizes="(max-width: 768px) 100vw, 1152px"
                 className="object-cover object-center"
@@ -458,7 +458,7 @@ export default function LandingPage() {
                 {"Agents answering\n24 / 7, in 3 languages."}
               </RevealText>
               <p className="mt-6 text-base text-black/40 leading-relaxed max-w-sm">
-                At any moment, businesses are handling calls through Solar AI — booking appointments, answering questions, and routing to staff when needed.
+                At any moment, businesses are handling calls through Solara AI — booking appointments, answering questions, and routing to staff when needed.
               </p>
               <div className="mt-10 flex items-end gap-2">
                 <LiveAgentCounter />
@@ -579,7 +579,7 @@ export default function LandingPage() {
             Start answering every<br />customer call.
           </h2>
           <p className="text-sm text-black/45 leading-relaxed mb-10">
-            Join Ethiopian businesses using Solar AI to handle customer calls in English, Amharic, and Afan Oromo.
+            Join Ethiopian businesses using Solara AI to handle customer calls in English, Amharic, and Afan Oromo.
           </p>
           {!submitted ? (
             <form
@@ -613,7 +613,7 @@ export default function LandingPage() {
       {/* ── FOOTER ──────────────────────────────────────── */}
       <footer className="py-10 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-          <span className="font-pixel text-xs tracking-[0.25em] text-black/50">SOLAR AI</span>
+          <span className="font-pixel text-xs tracking-[0.25em] text-black/50">SOLARA AI</span>
 
           <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
             {[
@@ -634,7 +634,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="max-w-6xl mx-auto mt-8 pt-6 border-t border-black/[0.04]">
-          <span className="text-xs text-black/20">© 2026 Solar AI. All rights reserved.</span>
+          <span className="text-xs text-black/20">© 2026 Solara AI. All rights reserved.</span>
         </div>
       </footer>
     </div>

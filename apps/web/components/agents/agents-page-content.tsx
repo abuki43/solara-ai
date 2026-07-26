@@ -62,7 +62,7 @@ function CopySlugButton({ slug, disabled }: { slug: string; disabled: boolean })
 function CopyEmbedButton({ slug, disabled }: { slug: string; disabled: boolean }) {
   const [copied, setCopied] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const snippet = `<iframe src="${origin}/embed/${slug}" width="400" height="120" style="border:0;border-radius:16px;" allow="microphone" title="Solar AI call widget"></iframe>`;
+  const snippet = `<iframe src="${origin}/embed/${slug}" width="400" height="120" style="border:0;border-radius:16px;" allow="microphone" title="Solara AI call widget"></iframe>`;
 
   async function handleCopy() {
     await navigator.clipboard.writeText(snippet);

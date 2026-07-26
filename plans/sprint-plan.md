@@ -1,4 +1,4 @@
-# Solar AI — Ultra-Detailed Sprint Plan
+# Solara AI — Ultra-Detailed Sprint Plan
 
 **Version:** 2.0  
 **Last updated:** 2026-07-25
@@ -23,7 +23,7 @@
 ## Dashboard — final sidebar
 
 ```
-Solar AI                    [ Agent: Bella Receptionist ▼ ]
+Solara AI                    [ Agent: Bella Receptionist ▼ ]
 
 ├── Agents        ← setup only (name, use case, languages, status)
 ├── Voice         ← voice picker, greeting, tone
@@ -497,7 +497,7 @@ Generated at call end by LLM or template:
 | Helper link | — | — | "How to get your Telegram chat ID" |
 
 **Buttons:**
-- "Send test message" → sends: `"✅ Solar AI test: Telegram handoff is working for {agent name}."`
+- "Send test message" → sends: `"✅ Solara AI test: Telegram handoff is working for {agent name}."`
 - Shows last test result + timestamp
 
 **Handoff message format (live call):**
@@ -772,7 +772,7 @@ Voice agent reads the selected agent from DB. An active English receptionist wor
 | UI | Reuse call component from test-call |
 | States | Loading / Active / Paused or draft / Not found / Rate limited |
 | Auth | None required |
-| Trust copy | Business name, AI disclosure, sensitive-data warning, "Powered by Solar AI" |
+| Trust copy | Business name, AI disclosure, sensitive-data warning, "Powered by Solara AI" |
 
 ### Feature 3.7 — Minimal call-session metadata
 - Persist agent, room, call type, start, end, and coarse outcome.

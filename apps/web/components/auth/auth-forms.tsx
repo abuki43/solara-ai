@@ -112,7 +112,7 @@ export function LoginForm() {
     <div className={panelClass}>
       <AuthHeading
         eyebrow="WELCOME BACK"
-        title="Sign in to Solar AI"
+        title="Sign in to Solara AI"
         description="Continue managing the receptionists that keep your business available."
       />
       <form className="space-y-5" onSubmit={handleSubmit}>
@@ -160,7 +160,7 @@ export function LoginForm() {
             {!loading ? <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" /> : null}
           </Button>
           <p className="pt-1 text-center text-sm text-black/40">
-            New to Solar AI?{" "}
+            New to Solara AI?{" "}
             <Link href="/signup" className="font-medium text-black underline-offset-4 hover:underline">
               Create an account
             </Link>

@@ -66,7 +66,7 @@ export function AuthShell({ children, mode }: AuthShellProps) {
 
           <div className="relative z-10 flex items-center justify-between p-8 xl:p-10">
             <Link href="/" className="font-pixel text-xs tracking-[0.28em] text-black/70">
-              SOLAR AI
+              SOLARA AI
             </Link>
             <Link
               href="/"
@@ -120,7 +120,7 @@ export function AuthShell({ children, mode }: AuthShellProps) {
         <section className="relative flex min-h-screen items-center justify-center px-5 py-10 sm:px-10 lg:bg-[#F5F4F0] xl:px-16">
           <div className="absolute left-5 top-6 z-10 flex items-center gap-3 lg:hidden">
             <Link href="/" className="font-pixel text-xs tracking-[0.25em] text-black/60">
-              SOLAR AI
+              SOLARA AI
             </Link>
           </div>
           <div className="w-full max-w-[470px]">{children}</div>

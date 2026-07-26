@@ -191,7 +191,7 @@ function InCallScreen({
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(56,120,90,0.35),transparent_55%),radial-gradient(ellipse_at_bottom,rgba(20,24,28,0.9),#0b0d10_70%)]" />
 
         <div className="relative z-10 flex flex-1 flex-col items-center">
-          <p className="text-[11px] uppercase tracking-[0.28em] text-white/45">Solar AI</p>
+          <p className="text-[11px] uppercase tracking-[0.28em] text-white/45">Solara AI</p>
           <div className="mt-10 flex size-24 items-center justify-center rounded-full bg-gradient-to-b from-[#3d5c4a] to-[#1f2e26] text-3xl font-light tracking-wide shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
             {contactName.slice(0, 1).toUpperCase()}
           </div>
@@ -507,7 +507,7 @@ function RingingPlaceholder({
     <div className="relative flex h-full flex-col items-center px-6 pb-10 pt-14 text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(56,120,90,0.35),transparent_55%),radial-gradient(ellipse_at_bottom,rgba(20,24,28,0.9),#0b0d10_70%)]" />
       <div className="relative z-10 flex flex-1 flex-col items-center">
-        <p className="text-[11px] uppercase tracking-[0.28em] text-white/45">Solar AI</p>
+        <p className="text-[11px] uppercase tracking-[0.28em] text-white/45">Solara AI</p>
         <div className="mt-10 flex size-24 items-center justify-center rounded-full bg-gradient-to-b from-[#3d5c4a] to-[#1f2e26] text-3xl font-light tracking-wide">
           {contactName.slice(0, 1).toUpperCase()}
         </div>

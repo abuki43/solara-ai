@@ -413,7 +413,7 @@ internalBookingRouter.post("/agent/:id/booking", async (req, res) => {
         const message = await sendTelegramMessage(
           connection.chatId,
           [
-            "New confirmed Solar AI booking",
+            "New confirmed Solara AI booking",
             `Confirmation: ${booking.confirmationCode}`,
             `Business: ${result.organization.name}`,
             `Service: ${booking.serviceName}`,

@@ -116,7 +116,7 @@ export function PublicCallPage({ slug }: { slug: string }) {
       <p className="mt-5 text-center text-[10px] uppercase tracking-[0.2em] text-black/30">
         Powered by{" "}
         <Link href="/" className="text-black/50 hover:text-black">
-          Solar AI
+          Solara AI
         </Link>
       </p>
     </div>
