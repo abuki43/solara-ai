@@ -6,6 +6,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { slugify, USE_CASE_TEMPLATES } from "../lib/agent-templates";
+import { assertValidHours, normalizeBusinessHours } from "../lib/knowledge-validation";
 import { orgOwnerProcedure } from "../lib/org-procedure";
 import { publicProcedure, router } from "../index";
 
@@ -113,7 +114,7 @@ export const agentRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Agent not found" });
       }
 
-      return agent;
+      return { ...agent, hours: normalizeBusinessHours(agent.hours) };
     }),
 
   create: orgOwnerProcedure.input(createAgentSchema).mutation(async ({ ctx, input }) => {
@@ -167,12 +168,15 @@ export const agentRouter = router({
       .update(agents)
       .set({
         ...updates,
+        ...(updates.hours ? { hours: assertValidHours(updates.hours) } : {}),
         ...(additionalLanguages ? { additionalLanguages } : {}),
       })
       .where(eq(agents.id, id))
       .returning();
 
-    return updated;
+    return updated
+      ? { ...updated, hours: normalizeBusinessHours(updated.hours) }
+      : updated;
   }),
 
   delete: orgOwnerProcedure

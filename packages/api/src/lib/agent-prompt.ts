@@ -1,6 +1,8 @@
 import type { agents } from "@solar-ai/db/schema/agent";
 import type { organizations } from "@solar-ai/db/schema/organization";
 
+import { normalizeBusinessHours } from "./knowledge-validation";
+
 type Agent = typeof agents.$inferSelect;
 type Organization = typeof organizations.$inferSelect;
 
@@ -39,6 +41,7 @@ export function buildAgentPrompt({
   fileContext = [],
 }: AgentPromptInput): string {
   const businessName = agent.businessName || organization.name;
+  const normalizedHours = normalizeBusinessHours(agent.hours);
   const address = organization.address || "Not provided";
   const phone = organization.phone || "Not provided";
   const website = organization.website || "Not provided";
@@ -81,7 +84,7 @@ Business details:
 - About: ${about}
 
 Opening hours:
-${formatHours(agent.hours)}
+${formatHours(normalizedHours)}
 
 Services:
 ${formatServices(agent.services)}

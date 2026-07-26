@@ -11,6 +11,37 @@ export const WEEKDAYS = [
   "sunday",
 ] as const;
 
+export const DAY_ABBREVIATIONS: Record<(typeof WEEKDAYS)[number], string> = {
+  monday: "mon",
+  tuesday: "tue",
+  wednesday: "wed",
+  thursday: "thu",
+  friday: "fri",
+  saturday: "sat",
+  sunday: "sun",
+};
+
+const DEFAULT_DAY_HOURS: BusinessHours[(typeof WEEKDAYS)[number]] = {
+  open: "09:00",
+  close: "17:00",
+  closed: false,
+};
+
+/** Normalize legacy abbreviated day keys (mon, tue, ...) to full weekday names. */
+export function normalizeBusinessHours(hours: BusinessHours): BusinessHours {
+  const normalized: BusinessHours = {};
+  for (const day of WEEKDAYS) {
+    const abbreviated = DAY_ABBREVIATIONS[day];
+    normalized[day] =
+      hours[day] ??
+      hours[abbreviated] ??
+      (day === "sunday"
+        ? { open: null, close: null, closed: true }
+        : { ...DEFAULT_DAY_HOURS });
+  }
+  return normalized;
+}
+
 const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export const dayHoursSchema = z
@@ -69,7 +100,7 @@ export const serviceSchema = z.object({
 export const servicesSchema = z.array(serviceSchema).max(20);
 
 export function assertValidHours(hours: BusinessHours) {
-  return businessHoursSchema.parse(hours);
+  return businessHoursSchema.parse(normalizeBusinessHours(hours));
 }
 
 export function assertValidServices(services: AgentService[]) {

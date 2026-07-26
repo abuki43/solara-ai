@@ -10,7 +10,9 @@ import { buildAgentPrompt } from "../lib/agent-prompt";
 import { buildFileContext } from "../lib/file-context";
 import { loadOwnedAgent } from "../lib/load-owned-agent";
 import {
+  assertValidHours,
   businessHoursSchema,
+  normalizeBusinessHours,
   servicesSchema,
 } from "../lib/knowledge-validation";
 import { orgOwnerProcedure } from "../lib/org-procedure";
@@ -39,7 +41,7 @@ async function loadKnowledgeBundle(organizationId: string, agentId: string) {
     fileContext,
   });
 
-  return { agent, organization, faqs, files, promptPreview };
+  return { agent: { ...agent, hours: normalizeBusinessHours(agent.hours) }, organization, faqs, files, promptPreview };
 }
 
 export const knowledgeRouter = router({
@@ -98,7 +100,7 @@ export const knowledgeRouter = router({
       const { agent } = await loadOwnedAgent(ctx.organization.id, input.agentId);
       await db
         .update(agents)
-        .set({ hours: input.hours })
+        .set({ hours: assertValidHours(input.hours) })
         .where(eq(agents.id, agent.id));
       return loadKnowledgeBundle(ctx.organization.id, input.agentId);
     }),
