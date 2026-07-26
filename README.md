@@ -16,11 +16,15 @@ AI voice receptionist for Ethiopian SMBs. Answer customer calls in Amharic, Afan
 
 ![Agents dashboard](docs/screenshots/agents-dashboard.png)
 
+![Create agent wizard](docs/screenshots/create-agent.png)
+
 ![Knowledge and business hours](docs/screenshots/knowledge.png)
 
 ![Tools — booking and Telegram handoff](docs/screenshots/tools.png)
 
 ![Bookings and appointments](docs/screenshots/bookings.png)
+
+![Billing and subscription](docs/screenshots/billing.png)
 
 ### Telegram notifications
 
