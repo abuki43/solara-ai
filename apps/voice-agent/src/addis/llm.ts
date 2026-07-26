@@ -138,9 +138,18 @@ class AddisLLMStream extends llm.LLMStream {
           }))
         : undefined;
 
+    const amharicBehavior = [
+      "Reply only in Amharic using Ge'ez script for spoken answers.",
+      "Keep replies to one to three short sentences for phone conversation.",
+      "Ask only one question at a time.",
+      "Never invent hours, prices, or availability; use tools when booking is enabled.",
+      "Keep tool argument values in the expected formats (service names, ISO times, phone digits).",
+    ].join(" ");
+
     const completion = await getAddisClient().chat.completions.create({
       language: "am",
-      system,
+      persona: "You are a warm Ethiopian salon customer-support receptionist speaking on a live phone call.",
+      system: system ? `${system}\n\n${amharicBehavior}` : amharicBehavior,
       messages,
       tools,
       tool_choice: tools?.length ? "auto" : undefined,

@@ -68,11 +68,27 @@ function sanitizeGreetingText(text: string): string {
     .trim();
 }
 
+function containsGeezScript(text: string): boolean {
+  return /[\u1200-\u137F]/.test(text);
+}
+
 function resolveGreetingText(
   greeting: string | null | undefined,
   organizationName: string,
   bookingEnabled: boolean,
+  language: CallLanguage = "en",
 ): string {
+  if (language === "am") {
+    const configured = greeting?.trim();
+    if (configured && containsGeezScript(configured)) {
+      return sanitizeGreetingText(configured);
+    }
+    const closing = bookingEnabled
+      ? "ቀጠሮ ማስያዝ ይፈልጋሉ ወይስ ጥያቄ አለዎት?"
+      : "እንዴት ልረዳዎት?";
+    return `ሰላም፣ እንኳን ወደ ${organizationName} በደህና መጡ። የደንበኛ አገልግሎት ነኝ። ${closing}`;
+  }
+
   const bookingClosing =
     "Would you like to book an appointment, or do you have a question?";
   const defaultClosing = bookingEnabled
@@ -98,7 +114,8 @@ function languagePromptSuffix(language: CallLanguage): string {
   return `
 
 Language rules:
-- Speak Amharic (Ge'ez script) for the entire call unless the caller clearly switches to English.
+- You MUST speak only Amharic using Ge'ez script for the entire call unless the caller clearly switches to English.
+- Do not answer in English when the caller speaks Amharic.
 - Keep replies short and natural for phone conversation.
 - When using tools, keep tool arguments in the expected formats (service names, ISO times, phone numbers).
 
@@ -115,10 +132,14 @@ function createSession(language: CallLanguage = "en", voiceId = DEFAULT_ENGLISH_
     return new voice.AgentSession({
       stt: new AddisSTT("am"),
       tts: new AddisTTS(voiceId),
+      // Multilingual TurnDetector has no Amharic thresholds; batch Addis STT works better with VAD.
       turnHandling: {
-        turnDetection: new inference.TurnDetector(),
+        turnDetection: "vad",
         preemptiveGeneration: { enabled: false },
       },
+      // Addis TTS is non-streaming and can exceed the default 10s idle timeout.
+      ttsReadIdleTimeout: 45_000,
+      forwardAudioIdleTimeout: 45_000,
     });
   }
 
@@ -553,7 +574,12 @@ export default defineAgent({
     await ctx.connect();
 
     session.say(
-      resolveGreetingText(config.agent.greeting, config.organization.name, bookingEnabled),
+      resolveGreetingText(
+        config.agent.greeting,
+        config.organization.name,
+        bookingEnabled,
+        language,
+      ),
       {
         addToChatCtx: true,
         allowInterruptions: true,

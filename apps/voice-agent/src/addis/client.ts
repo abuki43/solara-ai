@@ -8,7 +8,13 @@ export function getAddisClient(): AddisAI {
     throw new Error("ADDIS_API_KEY is required for Amharic calls");
   }
   if (!cached) {
-    cached = new AddisAI({ apiKey });
+    // Keep retries low for live turns: long Retry-After waits leave audioTranscript empty.
+    cached = new AddisAI({
+      apiKey,
+      timeout: 25_000,
+      maxRetries: 1,
+      logLevel: "warn",
+    });
   }
   return cached;
 }
