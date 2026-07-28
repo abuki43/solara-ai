@@ -9,6 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { VoiceDemo } from "@/components/voice/voice-demo";
 import { trpc } from "@/lib/providers";
 
+import { RealtimeCallPage } from "@/components/voice/realtime-call-page";
+
 export function PublicCallPage({ slug }: { slug: string }) {
   const { data: agent, isLoading, error } = trpc.agent.getPublicBySlug.useQuery(
     { slug },
@@ -93,17 +95,21 @@ export function PublicCallPage({ slug }: { slug: string }) {
                   : "bg-white/70 text-black/50 hover:text-black/80"
               }`}
             >
-              {option === "am" ? "Amharic" : "English"}
+              {option === "am" ? "Amharic (አማርኛ)" : "English"}
             </button>
           ))}
         </div>
       ) : null}
 
-      <VoiceDemo
-        agentSlug={slug}
-        receptionistName={`${businessName} AI Receptionist`}
-        language={selectedLanguage}
-      />
+      {selectedLanguage === "am" ? (
+        <RealtimeCallPage slug={slug} />
+      ) : (
+        <VoiceDemo
+          agentSlug={slug}
+          receptionistName={`${businessName} AI Receptionist`}
+          language={selectedLanguage}
+        />
+      )}
 
       <Card className="mt-4 border-white/60 bg-white/45 backdrop-blur">
         <CardContent className="flex items-start gap-3 p-4 text-xs leading-relaxed text-black/45">

@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express from "express";
+import { addisTokenRouter } from "./routes/addis-token.js";
 import { filesUploadRouter } from "./routes/files-upload.js";
 import { internalAgentRouter } from "./routes/internal-agent.js";
 import { internalBookingRouter } from "./routes/internal-booking.js";
@@ -46,6 +47,7 @@ app.use(express.json());
 
 app.all("/api/auth{/*path}", toNodeHandler(auth));
 app.use("/api/livekit", livekitRouter);
+app.use("/api/addis", addisTokenRouter);
 app.use("/api/files/upload", filesUploadRouter);
 app.use("/api/voice", voicePreviewRouter);
 app.use("/api/internal", internalAgentRouter);
