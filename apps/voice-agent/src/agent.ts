@@ -1,8 +1,6 @@
 import { Agent, inference, llm } from "@livekit/agents";
 import { z } from "zod";
 
-import { AddisLLM } from "./addis/llm.ts";
-
 export type HandoffRequest = {
   callerName: string;
   callerContact: string;
@@ -51,9 +49,7 @@ export function createAgent(
   cancelBooking?: (input: BookingCancelRequest) => Promise<string>,
   rescheduleBooking?: (input: BookingRescheduleRequest) => Promise<string>,
   endCall?: (input: EndCallRequest) => Promise<string>,
-  options?: { language?: "en" | "am" },
 ) {
-  const language = options?.language ?? "en";
   const tools = {
     ...(requestHandoff
       ? {
@@ -172,10 +168,7 @@ export function createAgent(
 
   return Agent.create({
     instructions,
-    llm:
-      language === "am"
-        ? new AddisLLM()
-        : new inference.LLM({ model: "google/gemini-2.5-flash-lite" }),
+    llm: new inference.LLM({ model: "google/gemini-2.5-flash" }),
     tools,
   });
 }

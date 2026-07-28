@@ -566,7 +566,6 @@ export default defineAgent({
         cancelBooking,
         rescheduleBooking,
         endCall,
-        { language },
       ),
       room: ctx.room,
     });

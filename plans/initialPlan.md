@@ -1,6 +1,6 @@
 AI Voice Receptionist — Hackathon() Plan
 One-liner
-An AI phone receptionist for small local businesses (salons, clinics, restaurants, etc.) that answers calls automatically, handles FAQs, books appointments, hands off to a human when it can't help, and speaks local languages — embeddable directly on the business's own website.
+An AI phone receptionist for medium local businesses (salons, clinics, restaurants, etc.) that answers calls automatically, handles FAQs, books appointments, hands off to a human when it can't help, and speaks local languages — embeddable directly on the business's own website.
 Core value proposition
 Small businesses miss calls during peak hours or after hours. This gives them a 24/7 front desk that can answer questions and book appointments without hiring extra staff.
 Feature scope

@@ -60,33 +60,49 @@ export class AddisSTT extends stt.STT {
       byteLength: encoded.byteLength,
     });
 
-    const result = await getAddisClient().speech.transcribe({
-      audio: {
-        data: encoded.wav,
-        filename: "utterance.wav",
-        contentType: "audio/wav",
-      },
-      language: this.language,
-    });
-
-    const text = result.text?.trim() ?? "";
-    console.info("[addis.STT] result", {
-      textLength: text.length,
-      textPreview: text.slice(0, 80),
-      confidence: result.confidence,
-    });
-
-    return {
-      type: stt.SpeechEventType.FINAL_TRANSCRIPT,
-      alternatives: [
-        {
-          language: this.languageCode,
-          text,
-          startTime: 0,
-          endTime: encoded.durationSec,
-          confidence: result.confidence ?? 0.9,
+    try {
+      const result = await getAddisClient().speech.transcribe({
+        audio: {
+          data: encoded.wav,
+          filename: "utterance.wav",
+          contentType: "audio/wav",
         },
-      ],
-    };
+        language: this.language,
+      });
+
+      const text = result.text?.trim() ?? "";
+      console.info("[addis.STT] result", {
+        textLength: text.length,
+        textPreview: text.slice(0, 80),
+        confidence: result.confidence,
+      });
+
+      return {
+        type: stt.SpeechEventType.FINAL_TRANSCRIPT,
+        alternatives: [
+          {
+            language: this.languageCode,
+            text,
+            startTime: 0,
+            endTime: encoded.durationSec,
+            confidence: result.confidence ?? 0.9,
+          },
+        ],
+      };
+    } catch (error) {
+      console.warn("[addis.STT] Transcription error", error);
+      return {
+        type: stt.SpeechEventType.FINAL_TRANSCRIPT,
+        alternatives: [
+          {
+            language: this.languageCode,
+            text: "",
+            startTime: 0,
+            endTime: encoded.durationSec,
+            confidence: 0,
+          },
+        ],
+      };
+    }
   }
 }
